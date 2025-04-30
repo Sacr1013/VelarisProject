@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold">Iniciar Sesión</h2>
+                        <p class="text-muted">Ingresa a tu cuenta para gestionar tus reservas</p>
+                    </div>
+
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if account_locked %}
+                    <div class="alert alert-danger">
+                        Tu cuenta está temporalmente bloqueada. Por favor espera 1 hora o contacta al administrador.
+                    </div>
+                    {% endif %}
+
+                    {% if attempts_left is not None and not account_locked %}
+                    <div class="alert alert-info">
+                        Intentos restantes: {{ attempts_left }}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-velaris w-100 mb-3" {% if account_locked %}disabled{% endif %}>
+                            {% if account_locked %}Cuenta Bloqueada{% else %}Ingresar{% endif %}
+                        </button>
+                        <div class="text-center">
+                            <a href="{% url 'password_reset' %}" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
+                            <p class="mt-2">¿No tienes cuenta? <a href="{% url 'register' %}">Regístrate aquí</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

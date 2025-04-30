@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Resultados de Búsqueda - Velaris{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="fw-bold mb-1">Vuelos Disponibles</h2>
+            <p class="text-muted mb-0">
+                {{ origin.city }} ({{ origin.code }}) → {{ destination.city }} ({{ destination.code }}) | 
+                {{ departure_date|date:"d M Y" }}
+            </p>
+        </div>
+        <a href="{% url 'home' %}" class="btn btn-outline-primary">Nueva Búsqueda</a>
+    </div>
+    
+    <div class="row">
+        {% for flight in flights %}
+        <div class="col-md-6 mb-4">
+            <div class="card card-flight h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                    <div>
+                        <h5 class="mb-0">{{ flight.airline.name }}</h5>
+                        <small class="text-muted">{{ flight.flight_number }}</small>
+                    </div>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-chair me-1"></i> {{ flight.available_seats }} disponibles
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>
+                            <h6 class="mb-0">{{ flight.departure_airport.city }} ({{ flight.departure_airport.code }})</h6>
+                            <small>{{ flight.departure_time|date:"d M Y" }}</small><br>
+                            <small>{{ flight.departure_time|time }}</small>
+                        </div>
+                        <div class="text-center">
+                            <small class="d-block">{{ flight.duration }}</small>
+                            <div class="flight-line position-relative">
+                                <div class="flight-dot"></div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-0">{{ flight.arrival_airport.city }} ({{ flight.arrival_airport.code }})</h6>
+                            <small>{{ flight.arrival_time|date:"d M Y" }}</small><br>
+                            <small>{{ flight.arrival_time|time }}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Precio por persona</small>
+                            <h4 class="mb-0 flight-price">${{ flight.price|intcomma }} COP</h4>
+                        </div>
+                        <a href="{% url 'book_flight' flight.id %}" class="btn btn-velaris">Reservar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-plane-slash text-muted mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="mb-3">No hay vuelos disponibles</h4>
+                    <p class="text-muted mb-4">No encontramos vuelos que coincidan con tu búsqueda.</p>
+                    <a href="{% url 'home' %}" class="btn btn-velaris">Intentar nueva búsqueda</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

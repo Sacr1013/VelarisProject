@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Reservar Vuelo - Velaris{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h2 class="fw-bold mb-0">Confirmar Reserva</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <h5 class="mb-1">{{ flight.airline.name }} {{ flight.flight_number }}</h5>
+                                <p class="text-muted mb-0">
+                                    {{ flight.departure_airport.city }} ({{ flight.departure_airport.code }}) → 
+                                    {{ flight.arrival_airport.city }} ({{ flight.arrival_airport.code }})
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="flight-price mb-1">${{ flight.price|intcomma }} COP</h5>
+                                <small class="text-muted">por persona</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between border-top border-bottom py-3">
+                            <div>
+                                <small class="text-muted">Salida</small>
+                                <p class="mb-0">{{ flight.departure_time|date:"d M Y" }} - {{ flight.departure_time|time }}</p>
+                                <p class="mb-0">{{ flight.departure_airport.name }}</p>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">Llegada</small>
+                                <p class="mb-0">{{ flight.arrival_time|date:"d M Y" }} - {{ flight.arrival_time|time }}</p>
+                                <p class="mb-0">{{ flight.arrival_airport.name }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                <small class="text-muted">Duración</small>
+                                <p class="mb-0">{{ flight.duration }}</p>
+                            </div>
+                            <div>
+                                <small class="text-muted">Asientos disponibles</small>
+                                <p class="mb-0">{{ flight.available_seats }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mb-4">Información de Reserva</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.passengers|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-5 pt-3 border-top">
+                            <a href="{% url 'flight_search' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-velaris">Confirmar Reserva</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

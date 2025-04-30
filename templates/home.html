@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+
+{% block title %}Inicio - Velaris{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-4">Descubre el mundo con Velaris</h1>
+        <p class="lead mb-5">Encuentra los mejores precios en vuelos nacionales e internacionales</p>
+        
+        <!-- Formulario de Búsqueda -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <form method="post" action="{% url 'flight_search' %}">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="origin" class="form-label">Origen</label>
+                                    <select class="form-select" id="origin" name="origin" required>
+                                        <option value="" selected disabled>Seleccionar</option>
+                                        <option value="1">Bogotá (BOG)</option>
+                                        <option value="2">Medellín (MDE)</option>
+                                        <option value="3">Cartagena (CTG)</option>
+                                        <option value="4">Miami (MIA)</option>
+                                        <option value="5">Madrid (MAD)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="destination" class="form-label">Destino</label>
+                                    <select class="form-select" id="destination" name="destination" required>
+                                        <option value="" selected disabled>Seleccionar</option>
+                                        <option value="1">Bogotá (BOG)</option>
+                                        <option value="2">Medellín (MDE)</option>
+                                        <option value="3">Cartagena (CTG)</option>
+                                        <option value="4">Miami (MIA)</option>
+                                        <option value="5">Madrid (MAD)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="departure_date" class="form-label">Fecha</label>
+                                    <input 
+                                        type="date" 
+                                        class="form-control" 
+                                        id="departure_date" 
+                                        name="departure_date" 
+                                        required 
+                                        min="{{ today|date:'Y-m-d' }}" 
+                                    >
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-velaris w-100">Buscar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Ofertas Destacadas -->
+<section class="container mb-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Ofertas Destacadas</h2>
+        <p class="text-muted">Descubre nuestras mejores rutas a precios exclusivos</p>
+    </div>
+    
+    <div class="row">
+        <!-- Vuelo 1 -->
+        <div class="col-md-4">
+            <div class="card card-flight h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Velaris Colombia</h5>
+                    <small class="text-white-50">VC101</small>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>
+                            <h6 class="mb-0">Bogotá (BOG)</h6>
+                            <small>15 Nov 2023</small><br>
+                            <small>08:00 AM</small>
+                        </div>
+                        <div class="text-center">
+                            <small class="d-block">1h 30m</small>
+                            <div class="flight-line position-relative">
+                                <div class="flight-dot"></div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-0">Medellín (MDE)</h6>
+                            <small>15 Nov 2023</small><br>
+                            <small>09:30 AM</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-chair me-1"></i> 120 disponibles
+                        </span>
+                        <h4 class="mb-0 flight-price">$250,000 COP</h4>
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-center">
+                    <a href="#" class="btn btn-velaris w-100">Reservar</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vuelo 2 -->
+        <div class="col-md-4">
+            <div class="card card-flight h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Velaris World</h5>
+                    <small class="text-white-50">VW303</small>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>
+                            <h6 class="mb-0">Bogotá (BOG)</h6>
+                            <small>18 Nov 2023</small><br>
+                            <small>10:00 PM</small>
+                        </div>
+                        <div class="text-center">
+                            <small class="d-block">10h 0m</small>
+                            <div class="flight-line position-relative">
+                                <div class="flight-dot"></div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-0">Madrid (MAD)</h6>
+                            <small>19 Nov 2023</small><br>
+                            <small>12:00 PM</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-chair me-1"></i> 80 disponibles
+                        </span>
+                        <h4 class="mb-0 flight-price">$1,200,000 COP</h4>
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-center">
+                    <a href="#" class="btn btn-velaris w-100">Reservar</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vuelo 3 -->
+        <div class="col-md-4">
+            <div class="card card-flight h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Velaris World</h5>
+                    <small class="text-white-50">VW404</small>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-4">
+                        <div>
+                            <h6 class="mb-0">Bogotá (BOG)</h6>
+                            <small>20 Nov 2023</small><br>
+                            <small>07:00 AM</small>
+                        </div>
+                        <div class="text-center">
+                            <small class="d-block">3h 30m</small>
+                            <div class="flight-line position-relative">
+                                <div class="flight-dot"></div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-0">Miami (MIA)</h6>
+                            <small>20 Nov 2023</small><br>
+                            <small>10:30 AM</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-chair me-1"></i> 150 disponibles
+                        </span>
+                        <h4 class="mb-0 flight-price">$850,000 COP</h4>
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-center">
+                    <a href="#" class="btn btn-velaris w-100">Reservar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Por qué elegirnos -->
+<section class="container mb-5 py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">¿Por qué elegir Velaris?</h2>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="text-center p-4">
+                <div class="mb-3" style="font-size: 2.5rem; color: var(--primary);">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h4>Seguridad</h4>
+                <p class="text-muted">La seguridad de nuestros pasajeros es nuestra máxima prioridad en cada vuelo.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center p-4">
+                <div class="mb-3" style="font-size: 2.5rem; color: var(--primary);">
+                    <i class="fas fa-medal"></i>
+                </div>
+                <h4>Calidad</h4>
+                <p class="text-muted">Servicio de primera clase con los más altos estándares de calidad.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="text-center p-4">
+                <div class="mb-3" style="font-size: 2.5rem; color: var(--primary);">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h4>Soporte 24/7</h4>
+                <p class="text-muted">Nuestro equipo está disponible para ayudarte en cualquier momento.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Iconos de Font Awesome -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const originSelect = document.getElementById("origin");
+        const destinationSelect = document.getElementById("destination");
+    
+        function updateDestinationOptions() {
+            const originValue = originSelect.value;
+            for (let option of destinationSelect.options) {
+                option.disabled = option.value === originValue && originValue !== "";
+            }
+        }
+    
+        originSelect.addEventListener("change", updateDestinationOptions);
+        destinationSelect.addEventListener("change", updateDestinationOptions);
+    });
+</script>
+    
+
+<style>
+    .flight-line {
+        width: 60px;
+        height: 2px;
+        background-color: #dee2e6;
+        margin: 10px auto;
+    }
+    
+    .flight-dot {
+        position: absolute;
+        top: -3px;
+        left: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        animation: flightDot 1.5s infinite;
+    }
+    
+    @keyframes flightDot {
+        0% { left: 0; }
+        50% { left: calc(100% - 8px); }
+        100% { left: 0; }
+    }
+</style>
+{% endblock %}

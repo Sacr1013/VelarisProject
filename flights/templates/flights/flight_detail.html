@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Detalles del Vuelo - Velaris{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">Detalles del Vuelo</h2>
+                        <span class="badge bg-success">Disponible</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-5">
+                        <h3 class="fw-bold">{{ flight.airline.name }}</h3>
+                        <p class="text-muted mb-0">Número de vuelo: {{ flight.flight_number }}</p>
+                    </div>
+                    
+                    <div class="flight-timeline mb-5">
+                        <div class="d-flex justify-content-between position-relative mb-4">
+                            <div class="text-center">
+                                <h4 class="mb-1">{{ flight.departure_time|time }}</h4>
+                                <p class="text-muted mb-0">{{ flight.departure_time|date:"d M Y" }}</p>
+                                <h5 class="mt-2">{{ flight.departure_airport.city }} ({{ flight.departure_airport.code }})</h5>
+                                <p class="text-muted small">{{ flight.departure_airport.name }}</p>
+                            </div>
+                            
+                            <div class="flight-duration text-center position-absolute top-0 start-50 translate-middle-x">
+                                <span class="badge bg-light text-dark">{{ flight.duration }}</span>
+                                <div class="flight-line"></div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <h4 class="mb-1">{{ flight.arrival_time|time }}</h4>
+                                <p class="text-muted mb-0">{{ flight.arrival_time|date:"d M Y" }}</p>
+                                <h5 class="mt-2">{{ flight.arrival_airport.city }} ({{ flight.arrival_airport.code }})</h5>
+                                <p class="text-muted small">{{ flight.arrival_airport.name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body text-center p-3">
+                                    <div class="mb-2 text-primary">
+                                        <i class="fas fa-suitcase-rolling fa-2x"></i>
+                                    </div>
+                                    <h5>Equipaje</h5>
+                                    <p class="text-muted small">1 maleta de mano (10kg) + 1 equipaje de bodega (23kg)</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body text-center p-3">
+                                    <div class="mb-2 text-primary">
+                                        <i class="fas fa-utensils fa-2x"></i>
+                                    </div>
+                                    <h5>Comida</h5>
+                                    <p class="text-muted small">Servicio de comida incluido según duración del vuelo</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body text-center p-3">
+                                    <div class="mb-2 text-primary">
+                                        <i class="fas fa-wifi fa-2x"></i>
+                                    </div>
+                                    <h5>Entretenimiento</h5>
+                                    <p class="text-muted small">WiFi y entretenimiento a bordo incluido</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center border-top pt-4">
+                        <div>
+                            <h4 class="flight-price mb-0">${{ flight.price|intcomma }} COP</h4>
+                            <small class="text-muted">Precio por persona</small>
+                        </div>
+                        <a href="{% url 'book_flight' flight.id %}" class="btn btn-velaris">Reservar Ahora</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .flight-timeline {
+        position: relative;
+    }
+    
+    .flight-line {
+        height: 2px;
+        width: 100%;
+        background-color: var(--primary);
+        position: relative;
+        margin: 15px 0;
+    }
+    
+    .flight-line:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: -3px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--primary);
+    }
+    
+    .flight-line:after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: -3px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--primary);
+    }
+    
+    .flight-duration {
+        width: 100%;
+    }
+</style>
+{% endblock %}

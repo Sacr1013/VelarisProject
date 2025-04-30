@@ -1,0 +1,40 @@
+# Entorno virtual
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyi
+*.pyz
+*.so
+
+# Django
+*.log
+*.pot
+*.sqlite3
+db.sqlite3
+
+# Archivos de entorno y sensibles
+.env
+.env.local
+.env*.local
+settings/local.py
+/velaris/settings/secrets.py
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos generados por el usuario
+uploads/
+media/
+staticfiles/
