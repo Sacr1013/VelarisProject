@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Flight, Booking, Airport, Airline
-from .forms import FlightSearchForm, BookingForm
+from .forms import FlightSearchForm, BookingForm, FlightSelectForm
 from django.db.models import Q
 from datetime import date
 
@@ -98,3 +98,42 @@ def book_flight(request, flight_id):
         'flight': flight,
         'form': form,
     })
+
+@login_required
+def select_flight(request, flight_id):
+    flight = get_object_or_404(Flight, id=flight_id, is_active=True)
+    
+    if request.method == 'POST':
+        form = FlightSelectForm(request.POST)
+        if form.is_valid():
+            # Crear booking en estado "seleccionado"
+            booking = Booking.objects.create(
+                user=request.user,
+                flight=flight,
+                passengers=form.cleaned_data['passengers'],
+                total_price=flight.price * form.cleaned_data['passengers'],
+                status='SELECTED'
+            )
+            
+            messages.success(request, 'Vuelo seleccionado. Puedes completar la reserva cuando desees.')
+            return redirect('dashboard')
+    
+    else:
+        form = FlightSelectForm()
+    
+    return render(request, 'flights/select_flight.html', {
+        'flight': flight,
+        'form': form
+    })
+
+@login_required
+def confirm_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    if booking.status == 'SELECTED':
+        booking.status = 'PENDING'  # O 'CONFIRMED' si el pago es inmediato
+        booking.save()
+        booking.send_confirmation_email()
+        messages.success(request, 'Reserva confirmada con éxito!')
+    
+    return redirect('dashboard')

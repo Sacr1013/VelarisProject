@@ -44,3 +44,14 @@ class BookingForm(forms.ModelForm):
                 'max': 10
             }),
         }
+
+class FlightSelectForm(forms.Form):
+    passengers = forms.IntegerField(
+        min_value=1,
+        max_value=10,
+        initial=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'id': 'passengers-select'
+        })
+    )

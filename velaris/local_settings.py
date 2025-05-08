@@ -14,6 +14,9 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '5432',
+        'OPTIONS': {
+            'passfile': '.pgpass',  # Opcional: si usas archivo de contraseñas
+        },
     }
 }
 

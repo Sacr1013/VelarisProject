@@ -70,7 +70,13 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    selected_bookings = request.user.booking_set.filter(status='SELECTED')
+    confirmed_bookings = request.user.booking_set.exclude(status='SELECTED')
+    
+    return render(request, 'accounts/dashboard.html', {
+        'selected_bookings': selected_bookings,
+        'confirmed_bookings': confirmed_bookings
+    })
 
 def password_reset_request(request):
     if request.method == 'POST':

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card">
+        <div class="card-header">
+            <h4>Seleccionar Vuelo</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>{{ flight.airline.name }} - {{ flight.flight_number }}</h5>
+                <p>{{ flight.departure_airport }} → {{ flight.arrival_airport }}</p>
+                <p>Salida: {{ flight.departure_time|date:"DATETIME_FORMAT" }}</p>
+                <p>Precio: ${{ flight.price|intcomma }} COP</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Seleccionar</button>
+                <a href="{% url 'flight_search' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

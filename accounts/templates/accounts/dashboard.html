@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Mi Cuenta - Velaris{% endblock %}
-
+{% load humanize %}
 {% block content %}
 <div class="container py-5">
     <div class="row">
@@ -43,6 +43,38 @@
         </div>
         
         <div class="col-md-8">
+            <!-- Sección de vuelos seleccionados -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Mis Selecciones</h5>
+                </div>
+                <div class="card-body">
+                    {% for booking in selected_bookings %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6>{{ booking.flight }}</h6>
+                            <small class="text-muted">
+                                {{ booking.passengers }} pasajero(s) | 
+                                ${{ booking.total_price|intcomma }} COP
+                            </small>
+                        </div>
+                        <div>
+                            <a href="{% url 'confirm_booking' booking.id %}" 
+                               class="btn btn-sm btn-success me-2">
+                                Confirmar
+                            </a>
+                            <a href="#" class="btn btn-sm btn-outline-danger">
+                                Cancelar
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No tienes vuelos seleccionados</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Mis Reservas Recientes -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0">
                     <h5 class="mb-0">Mis Reservas Recientes</h5>
@@ -60,57 +92,59 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for booking in confirmed_bookings|slice:":5" %}
                                 <tr>
-                                    <td>VC101</td>
-                                    <td>Bogotá → Medellín</td>
-                                    <td>15 Nov 2023</td>
-                                    <td><span class="badge bg-success">Confirmado</span></td>
+                                    <td>{{ booking.booking_reference }}</td>
+                                    <td>{{ booking.flight }}</td>
+                                    <td>{{ booking.flight.departure_time|date:"d M Y" }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if booking.status == 'CONFIRMED' %}bg-success
+                                            {% elif booking.status == 'PENDING' %}bg-warning text-dark
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ booking.get_status_display }}
+                                        </span>
+                                    </td>
                                     <td class="text-end">
                                         <a href="#" class="btn btn-sm btn-outline-primary">Ver</a>
                                     </td>
                                 </tr>
+                                {% empty %}
                                 <tr>
-                                    <td>VW303</td>
-                                    <td>Bogotá → Madrid</td>
-                                    <td>18 Nov 2023</td>
-                                    <td><span class="badge bg-warning text-dark">Pendiente</span></td>
-                                    <td class="text-end">
-                                        <a href="#" class="btn btn-sm btn-outline-primary">Ver</a>
-                                    </td>
+                                    <td colspan="5" class="text-center text-muted">No tienes reservas confirmadas</td>
                                 </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
             
+            <!-- Próximos Viajes -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0">
                     <h5 class="mb-0">Próximos Viajes</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-4">
+                    {% for booking in confirmed_bookings|slice:":2" %}
+                    <div class="d-flex align-items-center {% if not forloop.last %}mb-4{% endif %}">
                         <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
                             <i class="fas fa-plane text-primary" style="font-size: 1.5rem;"></i>
                         </div>
                         <div>
-                            <h6 class="mb-1">Bogotá → Madrid</h6>
-                            <p class="text-muted mb-0">18 Nov 2023 - 10:00 PM</p>
+                            <h6 class="mb-1">{{ booking.flight }}</h6>
+                            <p class="text-muted mb-0">
+                                {{ booking.flight.departure_time|date:"d M Y - H:i" }}
+                            </p>
                         </div>
                     </div>
-                    
-                    <div class="d-flex align-items-center">
-                        <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
-                            <i class="fas fa-plane text-primary" style="font-size: 1.5rem;"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-1">Madrid → Bogotá</h6>
-                            <p class="text-muted mb-0">25 Nov 2023 - 12:00 PM</p>
-                        </div>
-                    </div>
+                    {% empty %}
+                    <p class="text-muted">No tienes viajes próximos</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
