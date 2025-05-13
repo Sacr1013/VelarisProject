@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ title }}</h2>
+    <form method="post" id="flight-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        <a href="{% url 'admin_flight_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+
+    <!-- Sección de Usuarios/Reservas -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Reservas en este vuelo</h5>
+        </div>
+        <div class="card-body">
+            {% if bookings %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Pasajeros</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.user.username }}</td>
+                            <td>{{ booking.user.email }}</td>
+                            <td>{{ booking.passengers }}</td>
+                            <td>
+                                <span class="badge bg-{% if booking.status == 'CONFIRMED' %}success{% elif booking.status == 'PENDING' %}warning{% else %}info{% endif %}">
+                                    {{ booking.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'admin_edit_flight' flight.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="remove_booking" value="{{ booking.id }}">
+                                    {% with "¿Eliminar esta reserva?" as base_msg %}
+                                    {% if booking.status == "CONFIRMED" or booking.status == "PENDING" %}
+                                        {% with base_msg|add:" Se notificará al usuario." as confirm_message %}
+                                            <button type="submit" class="btn btn-sm btn-danger"
+                                                    onclick="return confirm('{{ confirm_message }}')">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                        {% endwith %}
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                onclick="return confirm('{{ base_msg }}')">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </button>
+                                    {% endif %}
+                                {% endwith %}
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay reservas para este vuelo.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

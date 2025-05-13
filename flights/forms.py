@@ -55,3 +55,35 @@ class FlightSelectForm(forms.Form):
             'id': 'passengers-select'
         })
     )
+
+# Añade estos nuevos formularios al final de flights/forms.py
+class FlightCreateForm(forms.ModelForm):
+    class Meta:
+        model = Flight
+        fields = '__all__'
+        widgets = {
+            'departure_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'arrival_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+class FlightEditForm(forms.ModelForm):
+    class Meta:
+        model = Flight
+        fields = '__all__'
+        widgets = {
+            'departure_time': forms.DateTimeInput(
+                attrs={'type': 'datetime-local'},
+                format='%Y-%m-%dT%H:%M'
+            ),
+            'arrival_time': forms.DateTimeInput(
+                attrs={'type': 'datetime-local'},
+                format='%Y-%m-%dT%H:%M'
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Formatea las fechas para el input datetime-local
+        if self.instance.pk:
+            self.initial['departure_time'] = self.instance.departure_time.strftime('%Y-%m-%dT%H:%M')
+            self.initial['arrival_time'] = self.instance.arrival_time.strftime('%Y-%m-%dT%H:%M')

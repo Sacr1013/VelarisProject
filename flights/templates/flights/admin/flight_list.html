@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Listado de Vuelos</h2>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <i class="fas fa-filter"></i> Filtros
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label for="flight_number" class="form-label">Número de Vuelo</label>
+                    <input type="text" name="flight_number" id="flight_number" 
+                           class="form-control" value="{{ filter_values.flight_number|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="origin" class="form-label">Origen</label>
+                    <select name="origin" id="origin" class="form-select">
+                        <option value="">Todos</option>
+                        {% for airport in airports %}
+                        <option value="{{ airport.code }}" {% if filter_values.origin == airport.code %}selected{% endif %}>
+                            {{ airport.code }} - {{ airport.city }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="destination" class="form-label">Destino</label>
+                    <select name="destination" id="destination" class="form-select">
+                        <option value="">Todos</option>
+                        {% for airport in airports %}
+                        <option value="{{ airport.code }}" {% if filter_values.destination == airport.code %}selected{% endif %}>
+                            {{ airport.code }} - {{ airport.city }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Desde</label>
+                    <input type="date" name="date_from" id="date_from" 
+                           class="form-control" value="{{ filter_values.date_from }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Hasta</label>
+                    <input type="date" name="date_to" id="date_to" 
+                           class="form-control" value="{{ filter_values.date_to }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="airline" class="form-label">Aerolínea</label>
+                    <select name="airline" id="airline" class="form-select">
+                        <option value="">Todas</option>
+                        {% for airline in airlines %}
+                        <option value="{{ airline.name }}" {% if filter_values.airline == airline.name %}selected{% endif %}>
+                            {{ airline.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Estado</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="active" {% if filter_values.status == 'active' %}selected{% endif %}>Activos</option>
+                        <option value="inactive" {% if filter_values.status == 'inactive' %}selected{% endif %}>Inactivos</option>
+                        <option value="all" {% if filter_values.status == 'all' %}selected{% endif %}>Todos</option>
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <a href="{% url 'admin_flight_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Botón de creación -->
+    <a href="{% url 'admin_create_flight' %}" class="btn btn-primary mb-3">
+        <i class="fas fa-plus"></i> Nuevo Vuelo
+    </a>
+    
+    <!-- Tabla de resultados -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Número</th>
+                    <th>Aerolínea</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Salida</th>
+                    <th>Llegada</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flight in flights %}
+                <tr>
+                    <td>{{ flight.flight_number }}</td>
+                    <td>{{ flight.airline }}</td>
+                    <td>{{ flight.departure_airport }}</td>
+                    <td>{{ flight.arrival_airport }}</td>
+                    <td>{{ flight.departure_time|date:"d/m/Y H:i" }}</td>
+                    <td>{{ flight.arrival_time|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        <span class="badge bg-{% if flight.is_active %}success{% else %}danger{% endif %}">
+                            {% if flight.is_active %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'admin_edit_flight' flight.id %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="post" action="{% url 'admin_delete_flight' flight.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('¿Eliminar este vuelo? Esta acción no se puede deshacer.')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No se encontraron vuelos con los filtros aplicados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if flights.paginator.num_pages > 1 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if flights.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page=1">&laquo; Primera</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ flights.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Página {{ flights.number }} de {{ flights.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if flights.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ flights.next_page_number }}">Siguiente</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ flights.paginator.num_pages }}">Última &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

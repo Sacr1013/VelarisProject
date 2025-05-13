@@ -59,16 +59,21 @@ class Booking(models.Model):
         ('CANCELLED', 'Cancelado'),
     ]
     
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
-    booking_date = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, db_index=True)
+    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, db_index=True)
+    booking_date = models.DateTimeField(auto_now_add=True, db_index=True)
     passengers = models.IntegerField(default=1)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
     booking_reference = models.CharField(max_length=8, unique=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='SELECTED')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='SELECTED', db_index=True)
     
     class Meta:
         ordering = ['-booking_date']
+        indexes = [
+            models.Index(fields=['flight', 'status']),
+            models.Index(fields=['user', 'booking_date']),
+            models.Index(fields=['status', 'booking_date']),
+        ]
     
     def __str__(self):
         return f"Reserva {self.booking_reference} - {self.user.username}"
@@ -84,7 +89,7 @@ class Booking(models.Model):
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     
     def send_confirmation_email(self):
-        subject = 'Confirmación de reserva en Velaris 2.0'
+        subject = 'Confirmación de reserva en Velaris'
         message = f'''
         Hola {self.user.username},
         
@@ -96,7 +101,7 @@ class Booking(models.Model):
         Pasajeros: {self.passengers}
         Precio total: ${self.total_price:,.2f} COP
         
-        Gracias por elegir Velaris 2.0!
+        Gracias por elegir Velaris!
         '''
         send_mail(
             subject,
@@ -105,3 +110,50 @@ class Booking(models.Model):
             [self.user.email],
             fail_silently=False,
         )
+    
+    def send_cancellation_email(self):
+        subject = 'Cancelación de reserva en Velaris'
+        message = f'''
+        Hola {self.user.username},
+        
+        Lamentamos informarte que tu reserva ha sido cancelada:
+        
+        Detalles:
+        - Número: {self.booking_reference}
+        - Vuelo: {self.flight}
+        - Fecha: {self.flight.departure_time.strftime('%d/%m/%Y %H:%M')}
+        - Pasajeros: {self.passengers}
+        '''
+        
+        if self.status == 'CONFIRMED':
+            message += '''
+            
+            Nuestro equipo se comunicará contigo en las próximas 48 horas
+            para gestionar el proceso de reembolso.
+            '''
+        elif self.status == 'PENDING':
+            message += '''
+            
+            El pago no fue procesado completamente.
+            Si tienes alguna duda sobre tu transacción, contáctanos.
+            '''
+        
+        message += '''
+        
+        Atentamente,
+        El equipo de Velaris
+        '''
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [self.user.email],
+            fail_silently=False,
+        )
+    
+    def cancel(self, notify_user=True):
+        """Cancela la reserva y opcionalmente notifica al usuario"""
+        if notify_user and self.status in ['CONFIRMED', 'PENDING']:
+            self.send_cancellation_email()
+        self.delete()

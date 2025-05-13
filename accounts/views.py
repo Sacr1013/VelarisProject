@@ -11,11 +11,14 @@ from axes.decorators import axes_dispatch
 from axes.models import AccessAttempt
 from axes.utils import reset  # Nueva importación útil
 from django.conf import settings
-
+from flights.models import Flight, Booking, Airline 
+from django.db.models import Count
+from datetime import datetime, timedelta
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        # Redirige a admin_dashboard si es staff, o al dashboard normal
+        return redirect('admin_dashboard' if request.user.is_staff else 'dashboard')
 
     form = LoginForm(request, data=request.POST or None)
     attempts_left = 3  # Valor por defecto
@@ -49,7 +52,8 @@ def login_view(request):
                     reset(username=email)
                 
                 login(request, user)
-                return redirect('dashboard')
+                # Cambio clave: Redirige a admin_dashboard si es staff
+                return redirect('admin_dashboard' if user.is_staff else 'dashboard')
         
         # Mostrar intentos restantes si el formulario no es válido
         messages.error(request, f'Credenciales incorrectas. Intentos restantes: {attempts_left - 1}')
@@ -61,6 +65,37 @@ def login_view(request):
     return render(request, 'accounts/login.html', {
         'form': form,
         'attempts_left': attempts_left
+    })
+
+@login_required
+def admin_dashboard(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+    
+    # Estadísticas principales
+    total_flights = Flight.objects.count()
+    active_bookings = Booking.objects.filter(status='CONFIRMED').count()
+    pending_bookings = Booking.objects.filter(status='PENDING').count()
+    airlines = Airline.objects.annotate(flight_count=Count('flight'))
+    
+    # Vuelos hoy/próximos
+    today = datetime.now().date()
+    flights_today = Flight.objects.filter(departure_time__date=today).count()
+    flights_next_week = Flight.objects.filter(
+        departure_time__range=(today, today + timedelta(days=7))
+    ).count()
+    
+    # Últimas reservas (5 más recientes)
+    recent_bookings = Booking.objects.select_related('user', 'flight').order_by('-booking_date')[:5]
+    
+    return render(request, 'accounts/admin_dashboard.html', {
+        'total_flights': total_flights,
+        'active_bookings': active_bookings,
+        'pending_bookings': pending_bookings,
+        'flights_today': flights_today,
+        'flights_next_week': flights_next_week,
+        'recent_bookings': recent_bookings,
+        'airlines': airlines,
     })
 
 def logout_view(request):

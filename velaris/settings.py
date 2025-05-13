@@ -116,7 +116,13 @@ AXES_MESSAGES = {
     'account_locked': "Tu cuenta ha sido bloqueada por múltiples intentos fallidos. Por favor espera 1 hora e intenta nuevamente.",
     'credentials_wrong': "Correo o contraseña incorrectos.",
 }
-
+USE_L10N = False
+DATETIME_INPUT_FORMATS = [
+    '%Y-%m-%d %H:%M:%S',    # '2006-10-25 14:30:59'
+    '%Y-%m-%d %H:%M',       # '2006-10-25 14:30'
+    '%Y-%m-%dT%H:%M',       # '2006-10-25T14:30' (para datetime-local)
+    '%Y-%m-%d',             # '2006-10-25'
+]
 # Importar configuraciones locales (al final del archivo)
 try:
     from .local_settings import *

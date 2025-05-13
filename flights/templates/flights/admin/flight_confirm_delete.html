@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+            <h4>Confirmar Eliminación</h4>
+        </div>
+        <div class="card-body">
+            {% if has_bookings %}
+            <div class="alert alert-warning">
+                <strong>¡Advertencia!</strong> Este vuelo tiene {{ flight.booking_set.count }} reservas asociadas.
+                Si lo eliminas, todas las reservas serán canceladas.
+            </div>
+            {% endif %}
+            
+            <p>¿Estás seguro de eliminar el vuelo <strong>{{ flight }}</strong>?</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'admin_flight_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Confirmar Eliminación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
