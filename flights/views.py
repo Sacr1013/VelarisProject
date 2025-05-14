@@ -1,15 +1,21 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .models import Flight, Booking, Airport, Airline
-from .forms import FlightSearchForm, BookingForm, FlightSelectForm
-from django.db.models import Q
-from datetime import date
-from django.contrib.auth.decorators import user_passes_test
-from .forms import FlightCreateForm, FlightEditForm
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+# flights/views.py
+from datetime import date, datetime
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
+from django.db.models import Q, Count, Sum
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from accounts.forms import CustomUserChangeForm
+from accounts.models import CustomUser
+from .forms import (
+    BookingForm, FlightCreateForm, FlightEditForm, FlightSearchForm,
+    FlightSelectForm, AirportForm, SeatSelectionForm, PaymentConfirmationForm
+)
+from .models import Airline, Airport, Booking, Flight, Seat, Payment
 
 def home(request):
     today = date.today()
@@ -79,29 +85,101 @@ def flight_search(request):
     
     return render(request, 'flights/flight_list.html', {'form': form})
 
-
 @login_required
 def book_flight(request, flight_id):
     flight = get_object_or_404(Flight, id=flight_id, is_active=True)
     
     if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.user = request.user
-            booking.flight = flight
-            booking.save()
+        form = BookingForm(request.POST, flight=flight)
+        seat_form = SeatSelectionForm(request.POST, flight=flight)
+        
+        if form.is_valid() and seat_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Crear la reserva
+                    booking = form.save(commit=False)
+                    booking.user = request.user
+                    booking.flight = flight
+                    booking.save()
+                    
+                    # Asignar asientos seleccionados
+                    selected_seats = seat_form.cleaned_data['seats']
+                    if len(selected_seats) != booking.passengers:
+                        raise form.ValidationError("Debes seleccionar un asiento por pasajero")
+                    
+                    seats = Seat.objects.filter(
+                        flight=flight,
+                        seat_number__in=selected_seats
+                    )
+                    seats.update(booking=booking, status='RESERVED')
+                    
+                    # Redirigir a confirmación de pago
+                    return redirect('payment_confirmation', booking_id=booking.id)
             
-            booking.send_confirmation_email()
-            
-            messages.success(request, 'Tu reserva ha sido confirmada. Hemos enviado un correo con los detalles.')
-            return redirect('dashboard')
+            except Exception as e:
+                messages.error(request, f"Error al crear la reserva: {str(e)}")
     else:
-        form = BookingForm()
+        form = BookingForm(flight=flight)
+        seat_form = SeatSelectionForm(flight=flight)
     
     return render(request, 'flights/booking_form.html', {
         'flight': flight,
         'form': form,
+        'seat_form': seat_form,
+    })
+
+@login_required
+def payment_confirmation(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    
+    if booking.status == 'CONFIRMED':
+        messages.warning(request, 'Esta reserva ya ha sido confirmada')
+        return redirect('booking_detail', booking_id=booking.id)
+    
+    if request.method == 'POST':
+        form = PaymentConfirmationForm(request.POST, booking=booking)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Crear o actualizar el pago
+                    payment, created = Payment.objects.get_or_create(
+                        booking=booking,
+                        defaults={
+                            'amount': booking.total_price,
+                            'payment_method': form.cleaned_data['payment_method']
+                        }
+                    )
+                    
+                    if not created:
+                        payment.payment_method = form.cleaned_data['payment_method']
+                        payment.save()
+                    
+                    # Marcar como completado (en un caso real sería después de verificar el pago)
+                    payment.mark_as_completed()
+                    
+                    messages.success(request, 'Pago completado y reserva confirmada!')
+                    return redirect('booking_detail', booking_id=booking.id)
+            
+            except Exception as e:
+                messages.error(request, f"Error al procesar el pago: {str(e)}")
+    else:
+        form = PaymentConfirmationForm(booking=booking)
+    
+    return render(request, 'flights/payment_confirmation.html', {
+        'booking': booking,
+        'form': form,
+    })
+
+@login_required
+def booking_detail(request, booking_id):
+    booking = get_object_or_404(
+        Booking.objects.select_related('flight', 'user', 'payment'),
+        id=booking_id,
+        user=request.user
+    )
+    
+    return render(request, 'flights/booking_detail.html', {
+        'booking': booking
     })
 
 @login_required
@@ -136,10 +214,9 @@ def confirm_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
     
     if booking.status == 'SELECTED':
-        booking.status = 'PENDING'  # O 'CONFIRMED' si el pago es inmediato
+        booking.status = 'PENDING'
         booking.save()
-        booking.send_confirmation_email()
-        messages.success(request, 'Reserva confirmada con éxito!')
+        return redirect('payment_confirmation', booking_id=booking.id)
     
     return redirect('dashboard')
 
@@ -232,24 +309,37 @@ def admin_create_flight(request):
 
 @user_passes_test(is_admin)
 def admin_edit_flight(request, flight_id):
-    flight = get_object_or_404(Flight.objects.select_related('airline', 'departure_airport', 'arrival_airport'), id=flight_id)
+    flight = get_object_or_404(
+        Flight.objects.select_related('airline', 'departure_airport', 'arrival_airport'), 
+        id=flight_id
+    )
     
     if request.method == 'POST':
         # Manejar eliminación de reserva
         if 'remove_booking' in request.POST:
             booking_id = request.POST.get('remove_booking')
             try:
-                booking = Booking.objects.get(id=booking_id, flight=flight)
-                booking.cancel(notify_user=True)
-                messages.success(request, 'Reserva eliminada correctamente.')
+                booking = Booking.objects.select_related('payment', 'user').get(id=booking_id, flight=flight)
+                
+                # Mensaje según estado
+                status_msg = {
+                    'CONFIRMED': 'Se notificará sobre el reembolso.',
+                    'PENDING': 'Se cancelará el proceso de pago.',
+                }.get(booking.status, '')
+                
+                if booking.cancel(notify_user=True):
+                    messages.success(request, f'Reserva cancelada correctamente. {status_msg}')
+                else:
+                    messages.error(request, 'Error al cancelar la reserva')
+                
                 return redirect('admin_edit_flight', flight_id=flight.id)
             except Booking.DoesNotExist:
                 messages.error(request, 'La reserva no existe')
             except Exception as e:
-                messages.error(request, f'Error al eliminar: {str(e)}')
+                messages.error(request, f'Error al cancelar: {str(e)}')
             return redirect('admin_edit_flight', flight_id=flight.id)
         
-        # Manejar actualización de vuelo
+        # Resto del código para actualizar el vuelo...
         form = FlightEditForm(request.POST, instance=flight)
         if form.is_valid():
             form.save()
@@ -258,39 +348,13 @@ def admin_edit_flight(request, flight_id):
     else:
         form = FlightEditForm(instance=flight)
     
-    bookings = Booking.objects.filter(flight=flight).select_related('user')
+    bookings = Booking.objects.filter(flight=flight).select_related('user', 'payment')
     return render(request, 'flights/admin/flight_form.html', {
         'form': form,
         'title': 'Editar Vuelo',
         'flight': flight,
         'bookings': bookings,
     })
-
-def send_cancellation_email(self, booking):
-    subject = 'Cancelación de tu reserva en Velaris'
-    message = f'''
-    Hola {booking.user.username},
-    
-    Lamentamos informarte que tu reserva ha sido cancelada:
-    
-    Número de reserva: {booking.booking_reference}
-    Vuelo: {booking.flight}
-    Fecha: {booking.flight.departure_time.strftime('%d/%m/%Y %H:%M')}
-    
-    {'El equipo de Velaris se comunicará contigo para gestionar el reembolso.' if booking.status == 'CONFIRMED' else ''}
-    
-    Si tienes alguna duda, por favor contáctanos.
-    
-    Atentamente,
-    El equipo de Velaris
-    '''
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [booking.user.email],
-        fail_silently=False,
-    )
 
 @user_passes_test(is_admin)
 def admin_delete_flight(request, flight_id):
@@ -312,4 +376,212 @@ def admin_delete_flight(request, flight_id):
         'flight': flight,
         'has_bookings': has_bookings
     })
+
+@user_passes_test(is_admin)
+def admin_user_list(request):
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', 'all')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
     
+    users = CustomUser.objects.all().order_by('-date_joined')
+    
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(phone_number__icontains=search_query)
+        )
+    
+    if status_filter == 'active':
+        users = users.filter(is_active=True)
+    elif status_filter == 'inactive':
+        users = users.filter(is_active=False)
+    
+    if date_from:
+        users = users.filter(date_joined__date__gte=date_from)
+    if date_to:
+        users = users.filter(date_joined__date__lte=date_to)
+    
+    paginator = Paginator(users, 15)
+    page = request.GET.get('page')
+    
+    try:
+        users = paginator.page(page)
+    except PageNotAnInteger:
+        users = paginator.page(1)
+    except EmptyPage:
+        users = paginator.page(paginator.num_pages)
+    
+    return render(request, 'flights/admin/user_list.html', {
+        'users': users,
+        'search_query': search_query,
+        'status': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    })
+
+@user_passes_test(is_admin)
+def admin_user_detail(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    bookings = Booking.objects.filter(user=user).select_related('flight', 'payment')
+    
+    return render(request, 'flights/admin/user_detail.html', {
+        'user': user,
+        'bookings': bookings
+    })
+
+@user_passes_test(is_admin)
+def admin_user_edit(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Usuario actualizado correctamente')
+            return redirect('admin_user_detail', user_id=user.id)
+    else:
+        form = CustomUserChangeForm(instance=user)
+    
+    return render(request, 'flights/admin/user_edit.html', {
+        'form': form,
+        'user': user
+    })
+
+@user_passes_test(is_admin)
+def admin_user_delete(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == 'POST':
+        user.delete()
+        messages.success(request, 'Usuario eliminado correctamente')
+        return redirect('admin_user_list')
+    
+    return render(request, 'flights/admin/user_confirm_delete.html', {
+        'user': user
+    })
+
+@user_passes_test(is_admin)
+def admin_airport_list(request):
+    airports = Airport.objects.all().order_by('city')
+    return render(request, 'flights/admin/airport_list.html', {
+        'airports': airports
+    })
+
+@user_passes_test(is_admin)
+def admin_airport_create(request):
+    if request.method == 'POST':
+        form = AirportForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Aeropuerto creado exitosamente!')
+            return redirect('admin_airport_list')
+    else:
+        form = AirportForm()
+    
+    return render(request, 'flights/admin/airport_form.html', {
+        'form': form,
+        'title': 'Crear nuevo aeropuerto'
+    })
+
+@user_passes_test(is_admin)
+def admin_airport_edit(request, airport_id):
+    airport = get_object_or_404(Airport, id=airport_id)
+    
+    if request.method == 'POST':
+        form = AirportForm(request.POST, instance=airport)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Aeropuerto actualizado exitosamente!')
+            return redirect('admin_airport_list')
+    else:
+        form = AirportForm(instance=airport)
+    
+    return render(request, 'flights/admin/airport_form.html', {
+        'form': form,
+        'title': 'Editar aeropuerto',
+        'airport': airport
+    })
+
+@user_passes_test(is_admin)
+def admin_airport_delete(request, airport_id):
+    airport = get_object_or_404(Airport, id=airport_id)
+    
+    if request.method == 'POST':
+        airport.delete()
+        messages.success(request, 'Aeropuerto eliminado correctamente.')
+        return redirect('admin_airport_list')
+    
+    return render(request, 'flights/admin/airport_confirm_delete.html', {
+        'airport': airport
+    })
+
+@user_passes_test(is_admin)
+def admin_payment_list(request):
+    payments = Payment.objects.select_related('booking', 'booking__user', 'booking__flight').order_by('-payment_date')
+    
+    # Filtros
+    status = request.GET.get('status', 'all')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    method = request.GET.get('method', 'all')
+    
+    if status != 'all':
+        payments = payments.filter(status=status)
+    
+    if date_from:
+        payments = payments.filter(payment_date__date__gte=date_from)
+    if date_to:
+        payments = payments.filter(payment_date__date__lte=date_to)
+    
+    if method != 'all':
+        payments = payments.filter(payment_method=method)
+    
+    paginator = Paginator(payments, 15)
+    page = request.GET.get('page')
+    
+    try:
+        payments = paginator.page(page)
+    except PageNotAnInteger:
+        payments = paginator.page(1)
+    except EmptyPage:
+        payments = paginator.page(paginator.num_pages)
+    
+    return render(request, 'flights/admin/payment_list.html', {
+        'payments': payments,
+        'status': status,
+        'date_from': date_from,
+        'date_to': date_to,
+        'method': method,
+    })
+
+@user_passes_test(is_admin)
+def admin_payment_detail(request, payment_id):
+    payment = get_object_or_404(
+        Payment.objects.select_related('booking', 'booking__user', 'booking__flight'),
+        id=payment_id
+    )
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        try:
+            if action == 'complete':
+                payment.mark_as_completed()
+                messages.success(request, 'Pago marcado como completado')
+            elif action == 'fail':
+                payment.mark_as_failed()
+                messages.success(request, 'Pago marcado como fallido')
+            elif action == 'refund':
+                payment.process_refund()
+                messages.success(request, 'Pago reembolsado')
+            
+            return redirect('admin_payment_detail', payment_id=payment.id)
+        
+        except Exception as e:
+            messages.error(request, f'Error al procesar la acción: {str(e)}')
+    
+    return render(request, 'flights/admin/payment_detail.html', {
+        'payment': payment
+    })

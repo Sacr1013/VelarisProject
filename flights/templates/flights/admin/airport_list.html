@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">Gestión de Aeropuertos</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Lista de Aeropuertos</h5>
+                <a href="{% url 'admin_airport_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Nuevo Aeropuerto
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Ciudad</th>
+                            <th>País</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for airport in airports %}
+                        <tr>
+                            <td>{{ airport.code }}</td>
+                            <td>{{ airport.name }}</td>
+                            <td>{{ airport.city }}</td>
+                            <td>{{ airport.country }}</td>
+                            <td>
+                                <a href="{% url 'admin_airport_edit' airport.id %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin_airport_delete' airport.id %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

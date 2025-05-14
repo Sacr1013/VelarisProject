@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm
 from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import UserChangeForm
 from .models import CustomUser
 from django.db.models import Q
 from axes.models import AccessAttempt 
@@ -72,3 +73,16 @@ class CustomUserCreationForm(UserCreationForm):
             user.save()
             user.send_verification_email()  # Enviar correo de verificación
         return user
+    
+class CustomUserChangeForm(UserChangeForm):
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'phone', 'first_name', 'last_name', 'is_active')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Personaliza los widgets si es necesario
+        self.fields['email'].widget.attrs.update({'class': 'form-control'})
+        self.fields['phone'].widget.attrs.update({'class': 'form-control'})
+        # Elimina el campo de contraseña ya que no se maneja aquí
+        self.fields.pop('password', None)
