@@ -37,30 +37,22 @@ class FlightSearchForm(forms.Form):
 
 class SeatSelectionForm(forms.Form):
     seats = forms.MultipleChoiceField(
-        choices=[],
         widget=forms.CheckboxSelectMultiple,
-        label="Selecciona tus asientos",
-        help_text="Selecciona un asiento por pasajero"
+        required=True,
+        label="Selecciona tus asientos"
     )
     
     def __init__(self, *args, **kwargs):
-        self.flight = kwargs.pop('flight', None)
-        self.booking = kwargs.pop('booking', None)
+        flight = kwargs.pop('flight', None)
         super().__init__(*args, **kwargs)
         
-        if self.flight:
+        if flight:
             available_seats = Seat.objects.filter(
-                flight=self.flight,
+                flight=flight,
                 status='AVAILABLE'
             ).values_list('seat_number', 'seat_number')
             
-            if self.booking:
-                # Para edición, incluir asientos ya seleccionados
-                booked_seats = self.booking.seats.values_list('seat_number', 'seat_number')
-                available_seats = list(available_seats) + list(booked_seats)
-            
             self.fields['seats'].choices = available_seats
-            self.fields['seats'].widget.attrs['max'] = self.booking.passengers if self.booking else 1
 
 class BookingForm(forms.ModelForm):
     class Meta:
@@ -82,19 +74,20 @@ class BookingForm(forms.ModelForm):
         if self.flight:
             self.fields['passengers'].widget.attrs['max'] = self.flight.available_seats
 
-class PaymentConfirmationForm(forms.Form):
-    payment_method = forms.ChoiceField(
-        choices=Payment.PAYMENT_METHODS,
-        widget=forms.RadioSelect,
-        initial='QR'
-    )
+class PaymentConfirmationForm(forms.ModelForm):  # ¡Asegúrate de que hereda de ModelForm!
+    class Meta:
+        model = Payment
+        fields = ['payment_method']
+        widgets = {
+            'payment_method': forms.RadioSelect(choices=Payment.PAYMENT_METHODS)
+        }
     
     def __init__(self, *args, **kwargs):
-        self.booking = kwargs.pop('booking', None)
+        # Elimina el argumento 'booking' si existe para evitar conflictos
+        kwargs.pop('booking', None)
         super().__init__(*args, **kwargs)
-        
-        if self.booking and self.booking.payment:
-            self.fields['payment_method'].initial = self.booking.payment.payment_method
+        self.fields['payment_method'].initial = 'QR'
+
 
 class AirportForm(forms.ModelForm):
     class Meta:

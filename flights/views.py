@@ -1,4 +1,6 @@
 # flights/views.py
+import logging
+logger = logging.getLogger(__name__)
 from datetime import date, datetime
 from django.conf import settings
 from django.contrib import messages
@@ -6,7 +8,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Q, Count, Sum
+from django.db.models import Q, Count, Sum,F
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from accounts.forms import CustomUserChangeForm
@@ -88,44 +90,76 @@ def flight_search(request):
 @login_required
 def book_flight(request, flight_id):
     flight = get_object_or_404(Flight, id=flight_id, is_active=True)
+    seats = Seat.objects.filter(flight=flight).order_by('seat_number')
     
+    if not seats.exists():
+        messages.error(request, "Este vuelo no tiene asientos configurados.")
+        return redirect('flight_search')  # Sin namespace
+
     if request.method == 'POST':
         form = BookingForm(request.POST, flight=flight)
-        seat_form = SeatSelectionForm(request.POST, flight=flight)
+        selected_seats = request.POST.getlist('seats')
         
-        if form.is_valid() and seat_form.is_valid():
+        if form.is_valid():
             try:
                 with transaction.atomic():
-                    # Crear la reserva
-                    booking = form.save(commit=False)
-                    booking.user = request.user
-                    booking.flight = flight
-                    booking.save()
+                    passengers = form.cleaned_data['passengers']
                     
-                    # Asignar asientos seleccionados
-                    selected_seats = seat_form.cleaned_data['seats']
-                    if len(selected_seats) != booking.passengers:
-                        raise form.ValidationError("Debes seleccionar un asiento por pasajero")
+                    # Validaciones
+                    if flight.available_seats < passengers:
+                        messages.error(request, "No hay suficientes asientos disponibles")
+                        return redirect('book_flight', flight_id=flight.id)
                     
-                    seats = Seat.objects.filter(
+                    if len(selected_seats) != passengers:
+                        messages.error(request, f"Debes seleccionar exactamente {passengers} asientos")
+                        return redirect('book_flight', flight_id=flight.id)
+                    
+                    # Crear reserva
+                    booking = Booking.objects.create(
+                        user=request.user,
                         flight=flight,
-                        seat_number__in=selected_seats
+                        passengers=passengers,
+                        total_price=flight.price * passengers,
+                        status='PENDING'
                     )
-                    seats.update(booking=booking, status='RESERVED')
                     
-                    # Redirigir a confirmación de pago
+                    # Actualizar asientos
+                    seats_to_update = seats.filter(seat_number__in=selected_seats, status='AVAILABLE')
+                    if seats_to_update.count() != passengers:
+                        messages.error(request, "Algunos asientos ya no están disponibles")
+                        raise Exception("Asientos no disponibles")
+                    
+                    seats_to_update.update(status='RESERVED', booking=booking)
+                    
+                    # Actualizar disponibilidad del vuelo
+                    flight.available_seats = F('available_seats') - passengers
+                    flight.save()
+                    
+                    # Redirigir a la confirmación de pago
                     return redirect('payment_confirmation', booking_id=booking.id)
             
             except Exception as e:
                 messages.error(request, f"Error al crear la reserva: {str(e)}")
+                logger.error(f"Error en book_flight: {str(e)}", exc_info=True)
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario")
     else:
         form = BookingForm(flight=flight)
-        seat_form = SeatSelectionForm(flight=flight)
+    
+    # Organizar asientos para la vista
+    seats_per_row = 6
+    seat_rows = []
+    all_seats = list(seats)
+    
+    for i in range(0, len(all_seats), seats_per_row):
+        row_seats = all_seats[i:i+seats_per_row]
+        seat_rows.append(row_seats)
     
     return render(request, 'flights/booking_form.html', {
         'flight': flight,
         'form': form,
-        'seat_form': seat_form,
+        'seat_rows': seat_rows,
+        'selected_seats': request.POST.getlist('seats', [])
     })
 
 @login_required
@@ -136,37 +170,40 @@ def payment_confirmation(request, booking_id):
         messages.warning(request, 'Esta reserva ya ha sido confirmada')
         return redirect('booking_detail', booking_id=booking.id)
     
+    # Obtener o crear el pago
+    payment, created = Payment.objects.get_or_create(
+        booking=booking,
+        defaults={
+            'amount': booking.total_price,
+            'payment_method': 'QR'
+        }
+    )
+    
     if request.method == 'POST':
-        form = PaymentConfirmationForm(request.POST, booking=booking)
+        form = PaymentConfirmationForm(request.POST, instance=payment)  # Usa instance correctamente
         if form.is_valid():
             try:
-                with transaction.atomic():
-                    # Crear o actualizar el pago
-                    payment, created = Payment.objects.get_or_create(
-                        booking=booking,
-                        defaults={
-                            'amount': booking.total_price,
-                            'payment_method': form.cleaned_data['payment_method']
-                        }
-                    )
-                    
-                    if not created:
-                        payment.payment_method = form.cleaned_data['payment_method']
-                        payment.save()
-                    
-                    # Marcar como completado (en un caso real sería después de verificar el pago)
-                    payment.mark_as_completed()
-                    
-                    messages.success(request, 'Pago completado y reserva confirmada!')
-                    return redirect('booking_detail', booking_id=booking.id)
-            
+                payment = form.save(commit=False)
+                payment.status = 'COMPLETED'
+                payment.save()
+                
+                # Actualizar estado de la reserva
+                booking.status = 'CONFIRMED'
+                booking.save()
+                
+                # Actualizar asientos
+                booking.booked_seats.update(status='OCCUPIED')
+                
+                messages.success(request, 'Pago completado y reserva confirmada!')
+                return redirect('booking_detail', booking_id=booking.id)
             except Exception as e:
                 messages.error(request, f"Error al procesar el pago: {str(e)}")
     else:
-        form = PaymentConfirmationForm(booking=booking)
+        form = PaymentConfirmationForm(instance=payment)  # Pasa la instancia correctamente
     
     return render(request, 'flights/payment_confirmation.html', {
         'booking': booking,
+        'payment': payment,
         'form': form,
     })
 
@@ -189,18 +226,27 @@ def select_flight(request, flight_id):
     if request.method == 'POST':
         form = FlightSelectForm(request.POST)
         if form.is_valid():
-            # Crear booking en estado "seleccionado"
-            booking = Booking.objects.create(
-                user=request.user,
-                flight=flight,
-                passengers=form.cleaned_data['passengers'],
-                total_price=flight.price * form.cleaned_data['passengers'],
-                status='SELECTED'
-            )
+            try:
+                with transaction.atomic():
+                    # Verificar disponibilidad
+                    if flight.available_seats < form.cleaned_data['passengers']:
+                        messages.error(request, "No hay suficientes asientos disponibles")
+                        return redirect('select_flight', flight_id=flight.id)
+                    
+                    # Crear booking en estado "seleccionado"
+                    booking = Booking.objects.create(
+                        user=request.user,
+                        flight=flight,
+                        passengers=form.cleaned_data['passengers'],
+                        total_price=flight.price * form.cleaned_data['passengers'],
+                        status='SELECTED'
+                    )
+                    
+                    messages.success(request, 'Vuelo seleccionado. Por favor complete los detalles de la reserva.')
+                    return redirect('book_flight', flight_id=flight.id)
             
-            messages.success(request, 'Vuelo seleccionado. Puedes completar la reserva cuando desees.')
-            return redirect('dashboard')
-    
+            except Exception as e:
+                messages.error(request, f"Error al seleccionar vuelo: {str(e)}")
     else:
         form = FlightSelectForm()
     

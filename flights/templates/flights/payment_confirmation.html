@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Confirmación de Pago - Velaris{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h2 class="fw-bold mb-0">Confirmación de Pago</h2>
+                    <p class="text-muted">Completa el proceso de pago para confirmar tu reserva</p>
+                </div>
+                <div class="card-body">
+                    <!-- Resumen de la reserva -->
+                    <div class="mb-4 p-3 bg-light rounded-3">
+                        <h5 class="mb-3">Detalles de tu reserva</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Vuelo:</strong> {{ booking.flight }}</p>
+                                <p class="mb-1"><strong>Referencia:</strong> {{ booking.booking_reference }}</p>
+                                <p class="mb-1"><strong>Asientos:</strong> 
+                                    {% for seat in booking.booked_seats.all %}
+                                        {{ seat.seat_number }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Pasajeros:</strong> {{ booking.passengers }}</p>
+                                <p class="mb-1"><strong>Total:</strong> ${{ booking.total_price|intcomma }} COP</p>
+                                <p class="mb-1"><strong>Estado:</strong> {{ booking.get_status_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulario de pago -->
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">Método de Pago</h5>
+                            {{ form.payment_method }}
+                        </div>
+                        
+                        <!-- Sección de QR -->
+                        <div class="text-center mb-4 p-4 border rounded">
+                            <h5 class="mb-3">Pago con QR</h5>
+                            {% if payment.qr_code %}
+                                <img src="{{ payment.qr_code.url }}" alt="Código QR para pago" class="img-fluid mb-3" style="max-width: 250px;">
+                                <p class="text-muted mb-2">Referencia: {{ payment.transaction_id }}</p>
+                                <p class="text-muted">Escanea este código con tu aplicación de banca móvil</p>
+                            {% else %}
+                                <div class="alert alert-warning">Generando código QR...</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{% url 'book_flight' booking.flight.id %}" class="btn btn-outline-secondary">Volver</a>
+                            <button type="submit" class="btn btn-primary">Confirmar Pago</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

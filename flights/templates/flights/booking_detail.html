@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Detalle de Reserva - Velaris{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h2 class="mb-0">Reserva #{{ booking.booking_reference }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h4>Detalles del Vuelo</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Aerolínea:</strong> {{ booking.flight.airline.name }}</p>
+                                <p><strong>Número de vuelo:</strong> {{ booking.flight.flight_number }}</p>
+                                <p><strong>Ruta:</strong> {{ booking.flight.departure_airport }} → {{ booking.flight.arrival_airport }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Fecha:</strong> {{ booking.flight.departure_time|date:"d M Y H:i" }}</p>
+                                <p><strong>Pasajeros:</strong> {{ booking.passengers }}</p>
+                                <p><strong>Estado:</strong> {{ booking.get_status_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4>Asientos Reservados</h4>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for seat in booking.booked_seats.all %}
+                                <span class="badge bg-primary p-2">{{ seat.seat_number }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded">
+                        <h4>Resumen de Pago</h4>
+                        <div class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <span class="fw-bold">${{ booking.total_price|intcomma }} COP</span>
+                        </div>
+                        {% if booking.payment %}
+                        <div class="d-flex justify-content-between mt-2">
+                            <span>Método de pago:</span>
+                            <span>{{ booking.payment.get_payment_method_display }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span>Estado del pago:</span>
+                            <span class="badge bg-{% if booking.payment.status == 'COMPLETED' %}success{% else %}warning{% endif %}">
+                                {{ booking.payment.get_status_display }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <a href="{% url 'home' %}" class="btn btn-primary">Volver al inicio</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

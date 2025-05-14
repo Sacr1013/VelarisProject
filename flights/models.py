@@ -132,21 +132,53 @@ class Flight(models.Model):
             suffix = ''.join(random.choices(string.digits, k=3))
             self.flight_number = f"{prefix}{suffix}"
             
-            # Verificar que no exista
             while Flight.objects.filter(flight_number=self.flight_number).exists():
                 prefix = ''.join(random.choices(string.ascii_uppercase, k=2))
                 suffix = ''.join(random.choices(string.digits, k=3))
                 self.flight_number = f"{prefix}{suffix}"
-        
-        # Para nuevos vuelos, establecer asientos disponibles igual al total
-        if not self.pk:
+    
+    # Para nuevos vuelos, establecer asientos disponibles igual al total
+        is_new = not self.pk
+        if is_new:
             self.available_seats = self.total_seats
-        
-        # Validar que origen y destino no sean iguales
-        if self.departure_airport == self.arrival_airport:
-            raise ValueError("El aeropuerto de origen y destino no pueden ser iguales")
-        
+    
         super().save(*args, **kwargs)
+    
+    # Crear asientos si es un nuevo vuelo
+        if is_new:
+            self.create_seats()
+        
+    def create_seats(self):
+        """Crea todos los asientos para este vuelo de manera más robusta"""
+        try:
+            # Primero eliminar cualquier asiento existente (por si acaso)
+            Seat.objects.filter(flight=self).delete()
+            
+            rows = range(1, (self.total_seats // 6) + 2)  # 6 asientos por fila
+            letters = 'ABCDEF'
+            seat_numbers = [
+                f"{row}{letter}" 
+                for row in rows 
+                for letter in letters[:6]
+            ][:self.total_seats]
+            
+            seats_to_create = [
+                Seat(
+                    flight=self,
+                    seat_number=seat_num,
+                    status='AVAILABLE'
+                ) for seat_num in seat_numbers
+            ]
+            
+            # Crear en lotes de 50 para mejor performance
+            batch_size = 50
+            for i in range(0, len(seats_to_create), batch_size):
+                Seat.objects.bulk_create(seats_to_create[i:i+batch_size])
+                
+            return True
+        except Exception as e:
+            logger.error(f"Error creando asientos para vuelo {self.id}: {str(e)}")
+            return False
     
     @property
     def duration(self):
@@ -290,11 +322,12 @@ class Booking(models.Model):
     
     def save(self, *args, **kwargs):
         """
-        Genera referencia automática y calcula precio total al guardar
+        Genera referencia de reserva automática y calcula precio total
         """
         if not self.booking_reference:
             self.booking_reference = self.generate_reference()
-        if not self.total_price:
+        
+        if not self.total_price and hasattr(self, 'flight'):
             self.total_price = self.flight.price * self.passengers
         
         super().save(*args, **kwargs)
@@ -306,7 +339,7 @@ class Booking(models.Model):
                 amount=self.total_price,
                 payment_method='QR'  # Método por defecto
             )
-    
+
     def generate_reference(self):
         """Genera una referencia única de 8 caracteres alfanuméricos"""
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))

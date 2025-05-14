@@ -1,74 +1,244 @@
-{% extends 'base.html' %}
-{% load crispy_forms_tags %}
-{% load humanize %}
-{% block title %}Reservar Vuelo - Velaris{% endblock %}
+    {% extends 'base.html' %}
+    {% load crispy_forms_tags %}
+    {% load humanize %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <h2 class="fw-bold mb-0">Confirmar Reserva</h2>
-                </div>
-                <div class="card-body">
-                    <div class="mb-5">
-                        <div class="d-flex justify-content-between mb-3">
-                            <div>
-                                <h5 class="mb-1">{{ flight.airline.name }} {{ flight.flight_number }}</h5>
-                                <p class="text-muted mb-0">
-                                    {{ flight.departure_airport.city }} ({{ flight.departure_airport.code }}) → 
-                                    {{ flight.arrival_airport.city }} ({{ flight.arrival_airport.code }})
-                                </p>
-                            </div>
-                            <div class="text-end">
-                                <h5 class="flight-price mb-1">${{ flight.price|intcomma }} COP</h5>
-                                <small class="text-muted">por persona</small>
-                            </div>
+    {% block title %}Reservar Vuelo - Velaris{% endblock %}
+
+    {% block content %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Indicador de Progreso -->
+                <div class="mb-4">
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 66%;" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <div class="text-center">
+                            <div class="badge rounded-circle bg-primary p-2">1</div>
+                            <div class="small mt-1">Selección</div>
                         </div>
-                        
-                        <div class="d-flex justify-content-between border-top border-bottom py-3">
-                            <div>
-                                <small class="text-muted">Salida</small>
-                                <p class="mb-0">{{ flight.departure_time|date:"d M Y" }} - {{ flight.departure_time|time }}</p>
-                                <p class="mb-0">{{ flight.departure_airport.name }}</p>
-                            </div>
-                            <div class="text-end">
-                                <small class="text-muted">Llegada</small>
-                                <p class="mb-0">{{ flight.arrival_time|date:"d M Y" }} - {{ flight.arrival_time|time }}</p>
-                                <p class="mb-0">{{ flight.arrival_airport.name }}</p>
-                            </div>
+                        <div class="text-center">
+                            <div class="badge rounded-circle bg-primary p-2">2</div>
+                            <div class="small mt-1">Asientos</div>
                         </div>
-                        
-                        <div class="d-flex justify-content-between mt-3">
-                            <div>
-                                <small class="text-muted">Duración</small>
-                                <p class="mb-0">{{ flight.duration }}</p>
-                            </div>
-                            <div>
-                                <small class="text-muted">Asientos disponibles</small>
-                                <p class="mb-0">{{ flight.available_seats }}</p>
-                            </div>
+                        <div class="text-center">
+                            <div class="badge rounded-circle bg-secondary p-2">3</div>
+                            <div class="small mt-1">Pago</div>
                         </div>
                     </div>
-                    
-                    <h5 class="mb-4">Información de Reserva</h5>
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.passengers|as_crispy_field }}
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-3 mb-4">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h2 class="fw-bold mb-0">Reserva de Vuelo</h2>
+                        <p class="text-muted">Selecciona tus asientos y completa la información</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Información del vuelo -->
+                        <div class="mb-4 p-3 bg-light rounded-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="mb-1">{{ flight.airline.name }}</h5>
+                                    <p class="mb-1">{{ flight.departure_airport.city }} → {{ flight.arrival_airport.city }}</p>
+                                    <p class="text-muted small mb-0">Vuelo {{ flight.flight_number }}</p>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <p class="mb-1"><strong>Salida:</strong> {{ flight.departure_time|date:"d M Y H:i" }}</p>
+                                    <p class="mb-1"><strong>Llegada:</strong> {{ flight.arrival_time|date:"d M Y H:i" }}</p>
+                                    <p class="text-muted small mb-0">Duración: {{ flight.duration }}</p>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="d-flex justify-content-between mt-5 pt-3 border-top">
-                            <a href="{% url 'flight_search' %}" class="btn btn-outline-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-velaris">Confirmar Reserva</button>
-                        </div>
-                    </form>
+                        <form method="post" id="booking-form">
+                            {% csrf_token %}
+                            
+                            <!-- Información de pasajeros -->
+                            <div class="mb-4">
+                                <h5 class="mb-3">Información de la Reserva</h5>
+                                {{ form|crispy }}
+                            </div>
+                            
+                            <!-- Selección de asientos -->
+                            <div class="mb-4">
+                                <h5 class="mb-3">Selección de Asientos</h5>
+                                <p class="text-muted small mb-4">Selecciona un asiento por cada pasajero.</p>
+                                
+                                {% if seat_rows %}
+                                <div class="seat-map-container p-4 border rounded text-center">
+                                    <div class="plane-header mb-3">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M21 16L12 4L3 16" stroke="#6c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
+                                    
+                                    <div class="seat-map mb-3">
+                                        {% for seat_row in seat_rows %}
+                                            <div class="seat-map-row mb-2">
+                                                {% for seat in seat_row %}
+                                                    <div class="checkbox-inline d-inline-block">
+                                                        {% if seat.status == 'AVAILABLE' %}
+                                                            <input type="checkbox" name="seats" value="{{ seat.seat_number }}" 
+                                                                id="seat_{{ seat.seat_number }}" class="seat-checkbox"
+                                                                {% if seat.seat_number in selected_seats %}checked{% endif %}>
+                                                            <label for="seat_{{ seat.seat_number }}" class="seat-label">
+                                                                {{ seat.seat_number }}
+                                                            </label>
+                                                        {% else %}
+                                                            <input type="checkbox" disabled id="seat_{{ seat.seat_number }}">
+                                                            <label for="seat_{{ seat.seat_number }}" class="seat-label occupied">
+                                                                {{ seat.seat_number }}
+                                                            </label>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <div class="mt-4 text-center d-flex justify-content-center gap-4">
+                                        <div><span class="badge bg-secondary me-1">&nbsp;</span> Ocupado</div>
+                                        <div><span class="badge bg-light border me-1">&nbsp;</span> Disponible</div>
+                                        <div><span class="badge bg-primary me-1">&nbsp;</span> Seleccionado</div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-danger">No hay asientos disponibles para este vuelo.</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Resumen -->
+                            <div class="mt-4 p-3 bg-light rounded-3">
+                                <h5 class="mb-3">Resumen</h5>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div>Precio por persona</div>
+                                    <div>${{ flight.price|intcomma }} COP</div>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 passenger-count-display">
+                                    <div>Pasajeros</div>
+                                    <div><span id="passenger-count">{{ form.passengers.value|default:1 }}</span></div>
+                                </div>
+                                <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-2 total-price-display">
+                                    <div>Total</div>
+                                    <div id="total-price">${{ flight.price|intcomma }} COP</div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                                <a href="{% url 'flight_search' %}" class="btn btn-outline-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary" id="submit-btn">Continuar al Pago</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const passengersInput = document.getElementById('id_passengers');
+            const seatCheckboxes = document.querySelectorAll('.seat-checkbox');
+            const submitBtn = document.getElementById('submit-btn');
+            const bookingForm = document.getElementById('booking-form');
+
+            // Control estricto de selección de asientos
+            const controlSeatSelection = () => {
+                const maxSeats = parseInt(passengersInput.value) || 1;
+                const selectedSeats = document.querySelectorAll('.seat-checkbox:checked').length;
+                
+                // Deshabilitar todos los asientos disponibles si se alcanza el límite
+                seatCheckboxes.forEach(checkbox => {
+                    if (!checkbox.disabled) {
+                        checkbox.disabled = !checkbox.checked && selectedSeats >= maxSeats;
+                    }
+                });
+                
+                // Si hay más seleccionados que pasajeros, desmarcar los extras
+                if (selectedSeats > maxSeats) {
+                    const extraSeats = selectedSeats - maxSeats;
+                    const checkedBoxes = Array.from(document.querySelectorAll('.seat-checkbox:checked'));
+                    
+                    for (let i = 0; i < extraSeats; i++) {
+                        checkedBoxes[i].checked = false;
+                    }
+                }
+            };
+
+            // Validación final antes de enviar
+            const validateForm = (e) => {
+                const passengers = parseInt(passengersInput.value) || 1;
+                const selectedSeats = document.querySelectorAll('.seat-checkbox:checked').length;
+                
+                if (selectedSeats !== passengers) {
+                    e.preventDefault();
+                    alert(`ERROR: Debes seleccionar exactamente ${passengers} asientos`);
+                    return false;
+                }
+                
+                // Mostrar carga
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+                return true;
+            };
+
+            // Event listeners
+            passengersInput?.addEventListener('change', controlSeatSelection);
+            seatCheckboxes.forEach(cb => cb.addEventListener('change', controlSeatSelection));
+            bookingForm.addEventListener('submit', validateForm);
+            
+            // Inicializar
+            controlSeatSelection();
+        });
+    </script>
+
+    <style>
+    .seat-map .checkbox-inline {
+        display: inline-block;
+        margin: 5px;
+        width: 40px;
+    }
+    .seat-map input[type="checkbox"] {
+        display: none;
+    }
+    .seat-map .checkbox-inline label {
+        display: block;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px 5px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 40px;
+    }
+    .seat-map input[type="checkbox"]:checked + label {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+    .seat-map input[type="checkbox"]:disabled + label {
+        background-color: #6c757d;
+        color: white;
+        border-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+    .seat-map .occupied {
+        background-color: #6c757d !important;
+        color: white !important;
+        border-color: #6c757d !important;
+        cursor: not-allowed !important;
+    }
+    .seat-map-row {
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .progress {
+        height: 4px !important;
+    }
+    </style>
+    {% endblock %}  
