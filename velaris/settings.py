@@ -82,7 +82,11 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
@@ -101,6 +105,8 @@ AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+BASE_URL = 'http://127.0.0.1:8000'  # Para desarrollo
 
 # Configuración de Axes
 AXES_ENABLED = True
@@ -124,6 +130,11 @@ DATETIME_INPUT_FORMATS = [
     '%Y-%m-%d',             # '2006-10-25'
 ]
 # Importar configuraciones locales (al final del archivo)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'Velaris <no-reply@velaris.com>' 
 try:
     from .local_settings import *
 except ImportError:
