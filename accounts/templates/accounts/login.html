@@ -54,4 +54,22 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar mensaje de intentos solo después de un fallo
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('login_failed')) {
+        const attemptsAlert = document.getElementById('attempts-alert');
+        if (attemptsAlert) {
+            setTimeout(() => {
+                attemptsAlert.classList.remove('d-none');
+                const toastEl = attemptsAlert.querySelector('.toast');
+                if (toastEl) {
+                    new bootstrap.Toast(toastEl, {autohide: true, delay: 5000}).show();
+                }
+            }, 1000);
+        }
+    }
+});
+</script>
 {% endblock %}

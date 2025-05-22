@@ -101,6 +101,17 @@ footer {
 .form-check-input:focus {
     box-shadow: 0 0 0 0.25rem rgba(58, 134, 255, 0.25);
 }
+.custom-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1100;
+    min-width: 300px;
+}
+
+.toast-header .bi {
+    margin-right: 8px;
+}
 
 /* Animación para el formulario */
 @keyframes fadeIn {

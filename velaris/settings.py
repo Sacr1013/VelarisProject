@@ -1,13 +1,18 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from django.contrib import messages
 
 # Cargar variables de entorno
 load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv('SECRET_KEY')  # Asegúrate de tenerla en .env
-DEBUG = True
+SECRET_KEY = os.environ.get('SECRET_KEY', default="b1w0)3-k#i=-bviw&z)=d8u0m9nvp0iz3=dzp+irml#2av&9&r")  # Asegúrate de tenerla en .env
+DEBUG = 'RENDER' not in os.environ
+ALLOWED_HOSTS = []
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -26,12 +31,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'velaris.middleware.AuthMessageMiddleware',
     'axes.middleware.AxesMiddleware',
 ]
 
@@ -83,6 +90,8 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
@@ -107,6 +116,14 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 BASE_URL = 'http://127.0.0.1:8000'  # Para desarrollo
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'info',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
 
 # Configuración de Axes
 AXES_ENABLED = True

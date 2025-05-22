@@ -1,0 +1,28 @@
+<div class="custom-toast">
+    <div class="toast-container">
+        {% for message in messages %}
+            {% if 'auth' in message.extra_tags or 'login' in message.extra_tags or 'axes' in message.extra_tags %}
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
+                <div class="toast-header bg-{{ message.tags }} text-white">
+                    <i class="bi 
+                        {% if message.tags == 'success' %}bi-check-circle-fill
+                        {% elif message.tags == 'danger' %}bi-exclamation-triangle-fill
+                        {% else %}bi-info-circle-fill{% endif %}"></i>
+                    <strong class="me-auto">
+                        {% if 'axes' in message.extra_tags %}Seguridad{% else %}Autenticación{% endif %}
+                    </strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                    {% if 'axes' in message.extra_tags %}
+                    <div class="mt-2 pt-2 border-top">
+                        <small>Por seguridad, tu cuenta ha sido temporalmente bloqueada.</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
