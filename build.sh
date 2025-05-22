@@ -1,4 +1,4 @@
-#!/user/bin/env bash
+#!/usr/bin/env bash
 
 set -oerrexit
 pip install -r requirements.txt
