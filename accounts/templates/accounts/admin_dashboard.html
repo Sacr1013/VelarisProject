@@ -236,30 +236,44 @@
     </div>
 </div>
 
-<!-- Modal para acciones rápidas -->
-<div class="modal fade" id="quickActionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Acción Rápida</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="list-group">
-                    <a href="{% url 'admin_create_flight' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-plus me-2"></i> Crear Nuevo Vuelo
-                    </a>
-                    <a href="{% url 'admin_airport_create' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-map-marker-alt me-2"></i> Agregar Aeropuerto
-                    </a>
-                    <a href="{% url 'admin_user_list' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-users me-2"></i> Gestionar Usuarios
-                    </a>
-                </div>
-            </div>
+{% if show_permission_denied %}
+<div class="custom-toast">
+    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-x-octagon-fill"></i>
+            <strong class="me-auto">Acceso Denegado</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            No tienes permisos para acceder al panel de administración.
         </div>
     </div>
 </div>
+{% endif %}
+
+<!-- Mostrar mensajes generales de admin -->
+{% if show_admin_messages %}
+<div class="custom-toast">
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-{{ message.tags }} text-white">
+                <i class="bi 
+                    {% if message.tags == 'success' %}bi-check-circle-fill
+                    {% elif message.tags == 'danger' %}bi-exclamation-octagon-fill
+                    {% elif message.tags == 'warning' %}bi-exclamation-triangle-fill
+                    {% else %}bi-info-circle-fill{% endif %}"></i>
+                <strong class="me-auto">Administración</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <style>
     .card {

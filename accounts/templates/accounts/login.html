@@ -11,23 +11,59 @@
                         <p class="text-muted">Ingresa a tu cuenta para gestionar tus reservas</p>
                     </div>
 
-                    {% if messages %}
-                    <div class="mb-4">
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                        {% endfor %}
+                    <!-- Mensajes condicionales -->
+                    {% if show_lockout_message %}
+                    <div id="lockout-toast" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header bg-danger text-white">
+                            <i class="bi bi-shield-lock"></i>
+                            <strong class="me-auto">Cuenta Bloqueada</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Tu cuenta está temporalmente bloqueada. Por favor espera {{ settings.AXES_COOLOFF_TIME }} hora(s) o contacta al administrador.
+                        </div>
                     </div>
                     {% endif %}
 
-                    {% if account_locked %}
-                    <div class="alert alert-danger">
-                        Tu cuenta está temporalmente bloqueada. Por favor espera 1 hora o contacta al administrador.
+                    {% if show_verification_message %}
+                    <div id="verification-toast" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header bg-warning text-dark">
+                            <i class="bi bi-envelope-exclamation"></i>
+                            <strong class="me-auto">Verificación Requerida</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Verifique su email antes de iniciar sesión.
+                        </div>
                     </div>
                     {% endif %}
 
-                    {% if attempts_left is not None and not account_locked %}
-                    <div class="alert alert-info">
-                        Intentos restantes: {{ attempts_left }}
+                    {% if show_success_message %}
+                    <div id="success-toast" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header bg-success text-white">
+                            <i class="bi bi-check-circle"></i>
+                            <strong class="me-auto">¡Bienvenido!</strong>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Hola {{ username }}, has iniciado sesión correctamente.
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if show_failed_message %}
+                    <div id="failed-toast" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header bg-warning text-dark">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong class="me-auto">Credenciales Incorrectas</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Credenciales incorrectas. Intentos restantes: {{ attempts_left }}
+                            <div class="mt-2 pt-2 border-top small">
+                                Por seguridad, tu cuenta será bloqueada después de {{ settings.AXES_FAILURE_LIMIT }} intentos fallidos.
+                            </div>
+                        </div>
                     </div>
                     {% endif %}
 
@@ -54,22 +90,22 @@
         </div>
     </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Mostrar mensaje de intentos solo después de un fallo
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('login_failed')) {
-        const attemptsAlert = document.getElementById('attempts-alert');
-        if (attemptsAlert) {
-            setTimeout(() => {
-                attemptsAlert.classList.remove('d-none');
-                const toastEl = attemptsAlert.querySelector('.toast');
-                if (toastEl) {
-                    new bootstrap.Toast(toastEl, {autohide: true, delay: 5000}).show();
-                }
-            }, 1000);
-        }
-    }
+    // Configurar auto-cierre de toasts
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(toast => {
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 5000
+        });
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    });
 });
 </script>
 {% endblock %}

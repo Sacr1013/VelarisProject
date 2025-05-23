@@ -337,17 +337,18 @@ def admin_flight_list(request):
         }
     })
 
+
 @user_passes_test(is_admin)
 def admin_create_flight(request):
     if request.method == 'POST':
         form = FlightCreateForm(request.POST)
         if form.is_valid():
             form.save()
+            # ✅ Mensaje tras creación
             messages.success(request, 'Vuelo creado exitosamente!')
-            return redirect('admin_flight_list')
+            return redirect('admin_flight_list')  # ✅ Redirige a lista
     else:
         form = FlightCreateForm()
-    
     return render(request, 'flights/admin/flight_form.html', {
         'form': form,
         'title': 'Crear nuevo vuelo'

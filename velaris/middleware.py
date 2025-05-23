@@ -8,22 +8,20 @@ class AuthMessageMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
         
-        # Solo procesar para respuestas que renderizan templates
         if hasattr(response, 'render') and callable(response.render):
             return self.process_template_response(request, response)
         return response
 
     def process_template_response(self, request, response):
-        if hasattr(request, 'axes_locked_out'):
-            # Limpiar mensajes previos de axes
-            storage = messages.get_messages(request)
-            for message in storage:
-                if 'axes' not in message.extra_tags:
-                    storage.used = False
-            
-            # Añadir mensaje personalizado
+        # Limpiar mensajes duplicados de Axes
+        storage = messages.get_messages(request)
+        axes_messages = [msg for msg in storage if 'axes' in msg.extra_tags]
+        storage.used = True  # Marcar todos como leídos
+        
+        # Si hay mensajes de Axes, agregar uno limpio
+        if axes_messages:
             messages.error(request, 
                          "Demasiados intentos fallidos. Cuenta bloqueada temporalmente.", 
-                         extra_tags='axes auth')
+                         extra_tags='auth axes-lockout')
         
         return response

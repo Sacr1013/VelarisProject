@@ -5,8 +5,8 @@ from django.contrib import messages
 from .forms import LoginForm, CustomPasswordResetForm, CustomSetPasswordForm, CustomUserCreationForm
 from .models import CustomUser
 from django.views.generic import CreateView
-from django.urls import reverse_lazy
-from django.db.models import Q 
+from django.urls import reverse_lazy, reverse
+from django.db.models import Q, Sum
 from axes.decorators import axes_dispatch
 from axes.models import AccessAttempt
 from axes.utils import reset  # Nueva importación útil
@@ -17,85 +17,87 @@ from datetime import datetime, timedelta
 
 def login_view(request):
     if request.user.is_authenticated:
-        # Redirige a admin_dashboard si es staff, o al dashboard normal
         return redirect('admin_dashboard' if request.user.is_staff else 'dashboard')
 
     form = LoginForm(request, data=request.POST or None)
-    attempts_left = 3  # Valor por defecto
+    attempts_left = settings.AXES_FAILURE_LIMIT
 
     if request.method == 'POST':
         email = request.POST.get('username', '')
-        
-        # Verificar intentos fallidos previos
         attempt = AccessAttempt.objects.filter(username=email).first()
+        
         if attempt:
             attempts_left = max(0, settings.AXES_FAILURE_LIMIT - attempt.failures_since_start)
             
             if attempt.failures_since_start >= settings.AXES_FAILURE_LIMIT:
-                messages.error(request, f'Cuenta bloqueada. Espere {settings.AXES_COOLOFF_TIME} hora(s) o contacte al administrador.')
-                return render(request, 'accounts/login.html', {
-                    'form': form,
-                    'attempts_left': 0,
-                    'account_locked': True
-                })
+                messages.error(request, 'Cuenta bloqueada. Espere 1 hora o contacte al administrador.', 
+                             extra_tags='auth axes-lockout')
+                return render(request, 'accounts/login.html', {'form': form, 'account_locked': True})
 
         if form.is_valid():
             user = authenticate(request, username=email, password=form.cleaned_data['password'])
-            
             if user is not None:
                 if not user.email_verified:
-                    messages.warning(request, 'Verifique su email antes de iniciar sesión.')
+                    messages.warning(request, 'Verifique su email antes de iniciar sesión.',
+                                   extra_tags='auth email-verification')
                     return redirect('login')
                 
-                # Resetear intentos fallidos si existen
                 if attempt:
                     reset(username=email)
                 
                 login(request, user)
-                # Cambio clave: Redirige a admin_dashboard si es staff
+                messages.success(request, f'Bienvenido, {user.get_short_name()}!', 
+                               extra_tags='auth login-success')
                 return redirect('admin_dashboard' if user.is_staff else 'dashboard')
         
-        # Mostrar intentos restantes si el formulario no es válido
-        messages.error(request, f'Credenciales incorrectas. Intentos restantes: {attempts_left - 1}')
-        return render(request, 'accounts/login.html', {
-            'form': form,
-            'attempts_left': attempts_left - 1
-        })
+        remaining_attempts = attempts_left - 1
+        messages.error(request, f'Credenciales incorrectas. Intentos restantes: {remaining_attempts}', 
+                     extra_tags='auth login-failed')
+        return redirect(f"{reverse('login')}?login_failed=true&attempts={remaining_attempts}")
 
-    return render(request, 'accounts/login.html', {
-        'form': form,
-        'attempts_left': attempts_left
-    })
+    return render(request, 'accounts/login.html', {'form': form, 'attempts_left': attempts_left})
 
 @login_required
 def admin_dashboard(request):
     if not request.user.is_staff:
-        return redirect('dashboard')
+        return render(request, 'accounts/admin_dashboard.html', {
+            'show_permission_denied': True
+        })
     
     # Estadísticas principales
-    total_flights = Flight.objects.count()
-    active_bookings = Booking.objects.filter(status='CONFIRMED').count()
-    pending_bookings = Booking.objects.filter(status='PENDING').count()
+    today = datetime.now().date()
+    stats = {
+        'total_flights': Flight.objects.count(),
+        'active_bookings': Booking.objects.filter(status='CONFIRMED').count(),
+        'pending_bookings': Booking.objects.filter(status='PENDING').count(),
+        'flights_today': Flight.objects.filter(departure_time__date=today).count(),
+        'flights_next_week': Flight.objects.filter(
+            departure_time__range=(today, today + timedelta(days=7))
+        ).count(),
+        'today_income': Booking.objects.filter(
+            status='CONFIRMED',
+            booking_date__date=today
+        ).aggregate(Sum('total_price'))['total_price__sum'] or 0,
+        'total_users': CustomUser.objects.count()
+    }
+    
+    # Datos para las tablas
+    recent_flights = Flight.objects.select_related(
+        'airline', 'departure_airport', 'arrival_airport'
+    ).order_by('departure_time')[:5]
+    
+    recent_bookings = Booking.objects.select_related(
+        'user', 'flight'
+    ).order_by('-booking_date')[:5]
+    
     airlines = Airline.objects.annotate(flight_count=Count('flight'))
     
-    # Vuelos hoy/próximos
-    today = datetime.now().date()
-    flights_today = Flight.objects.filter(departure_time__date=today).count()
-    flights_next_week = Flight.objects.filter(
-        departure_time__range=(today, today + timedelta(days=7))
-    ).count()
-    
-    # Últimas reservas (5 más recientes)
-    recent_bookings = Booking.objects.select_related('user', 'flight').order_by('-booking_date')[:5]
-    
     return render(request, 'accounts/admin_dashboard.html', {
-        'total_flights': total_flights,
-        'active_bookings': active_bookings,
-        'pending_bookings': pending_bookings,
-        'flights_today': flights_today,
-        'flights_next_week': flights_next_week,
+        'stats': stats,
+        'recent_flights': recent_flights,
         'recent_bookings': recent_bookings,
         'airlines': airlines,
+        'show_admin_messages': True
     })
 
 def logout_view(request):

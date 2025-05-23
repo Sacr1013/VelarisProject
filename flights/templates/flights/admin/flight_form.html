@@ -6,7 +6,9 @@
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-        <a href="{% url 'admin_flight_list' %}" class="btn btn-secondary">Cancelar</a>
+        <a href="{% url 'admin_flight_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
     </form>
 
     <!-- Sección de Usuarios/Reservas -->
