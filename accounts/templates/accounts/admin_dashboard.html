@@ -2,290 +2,714 @@
 {% load static %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mt-4">Panel de Administración</h1>
-        <div class="dropdown">
-            <button class="btn btn-primary dropdown-toggle" type="button" id="quickActions" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-bolt"></i> Acciones Rápidas
+<div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Velaris</span>
+            </div>
+            <button id="toggleSidebar" class="btn btn-light">
+                <i class="fas fa-bars"></i>
             </button>
-            <ul class="dropdown-menu" aria-labelledby="quickActions">
-                <li><a class="dropdown-item" href="{% url 'admin_create_flight' %}"><i class="fas fa-plus"></i> Nuevo Vuelo</a></li>
-                <li><a class="dropdown-item" href="{% url 'admin_airport_create' %}"><i class="fas fa-map-marker-alt"></i> Nuevo Aeropuerto</a></li>
-                <li><a class="dropdown-item" href="{% url 'admin_user_list' %}"><i class="fas fa-user-plus"></i> Nuevo Usuario</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-export"></i> Exportar Datos</a></li>
-            </ul>
-        </div>
-    </div>
-    
-    <div class="row">
-        <!-- Tarjeta de Vuelos -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Vuelos Activos</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.active_flights }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-plane fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-end">
-                        <a href="{% url 'admin_flight_list' %}" class="text-xs text-primary">Ver todos <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </div>
-            </div>
         </div>
         
-        <!-- Tarjeta de Reservas -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Reservas Hoy</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.today_bookings }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-end">
-                        <a href="#" class="text-xs text-success">Ver reporte <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'admin_flight_list' %}" class="nav-item">
+                <i class="fas fa-plane-departure"></i>
+                <span>Vuelos</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Reservas</span>
+            </a>
+            <a href="{% url 'admin_user_list' %}" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Usuarios</span>
+            </a>
+            <a href="{% url 'admin_airport_list' %}" class="nav-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Aeropuertos</span>
+            </a>
+        </nav>
         
-        <!-- Tarjeta de Usuarios -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Usuarios Registrados</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_users }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-end">
-                        <a href="{% url 'admin_user_list' %}" class="text-xs text-info">Gestionar <i class="fas fa-arrow-right"></i></a>
-                    </div>
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <button id="toggleDarkMode" class="btn btn-sm btn-dark">🌙</button>
+            <div class="user-greeting">
+                <span>Hola, {{ user.get_short_name }}</span>
+            <div class="header-controls">
+                <div class="user-profile">
+                    <i class="fas fa-user-circle"></i>
                 </div>
             </div>
-        </div>
-        
-        <!-- Tarjeta de Ingresos -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Ingresos Hoy</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ stats.today_income|floatformat:2 }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-end">
-                        <a href="#" class="text-xs text-warning">Ver detalles <i class="fas fa-arrow-right"></i></a>
-                    </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <h3>{{ stats.active_flights }}</h3>
+                    <p>Vuelos Activos</p>
                 </div>
+                <i class="fas fa-plane stat-icon"></i>
+                <a href="{% url 'admin_flight_list' %}" class="stat-link">Ver todos →</a>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-content">
+                    <h3>{{ stats.today_bookings }}</h3>
+                    <p>Reservas Hoy</p>
+                </div>
+                <i class="fas fa-calendar-check stat-icon"></i>
+                <a href="#" class="stat-link">Ver reporte →</a>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-content">
+                    <h3>{{ stats.total_users }}</h3>
+                    <p>Usuarios Registrados</p>
+                </div>
+                <i class="fas fa-users stat-icon"></i>
+                <a href="{% url 'admin_user_list' %}" class="stat-link">Gestionar →</a>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-content">
+                    <h3>${{ stats.today_income|floatformat:2 }}</h3>
+                    <p>Ingresos Hoy</p>
+                </div>
+                <i class="fas fa-dollar-sign stat-icon"></i>
+                <a href="#" class="stat-link">Ver detalles →</a>
             </div>
         </div>
-    </div>
-    
-    <!-- Gráficos y Secciones -->
-    <div class="row">
-        <!-- Últimos Vuelos -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Próximos Vuelos</h6>
-                    <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                            <li><a class="dropdown-item" href="{% url 'admin_flight_list' %}">Ver todos</a></li>
-                            <li><a class="dropdown-item" href="{% url 'admin_create_flight' %}">Agregar nuevo</a></li>
-                        </ul>
+
+        <!-- Tables Section -->
+        <div class="content-grid">
+            <!-- Próximos Vuelos -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h3>Próximos Vuelos</h3>
+                    <div class="card-actions">
+                        <a href="{% url 'admin_flight_list' %}" class="action-link">Ver todos</a>
+                        <a href="{% url 'admin_create_flight' %}" class="action-link">Nuevo vuelo</a>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Número</th>
-                                    <th>Ruta</th>
-                                    <th>Fecha</th>
-                                    <th>Asientos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for flight in recent_flights %}
-                                <tr>
-                                    <td>{{ flight.flight_number }}</td>
-                                    <td>{{ flight.departure_airport.code }} → {{ flight.arrival_airport.code }}</td>
-                                    <td>{{ flight.departure_time|date:"d/m H:i" }}</td>
-                                    <td>
-                                        <div class="progress" style="height: 20px;">
-                                            {% with percent=flight.get_seat_percentage %}
-                                            <div class="progress-bar {% if percent > 75 %}bg-success{% elif percent > 40 %}bg-warning{% else %}bg-danger{% endif %}" 
-                                                 role="progressbar" style="width: '{{ percent }}%'"
-                                                 aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">
-                                                {{ flight.available_seats }}/{{ flight.total_seats }}
-                                            </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Ruta</th>
+                            <th>Fecha</th>
+                            <th>Asientos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for flight in recent_flights %}
+                        <tr>
+                            <td>{{ flight.flight_number }}</td>
+                            <td>{{ flight.departure_airport.code }} → {{ flight.arrival_airport.code }}</td>
+                            <td>{{ flight.departure_time|date:"d/m H:i" }}</td>
+                            <td>
+                                <div class="progress-bar">
+                                    {% with percent=flight.get_seat_percentage %}
+                                        {% if percent > 75 %}
+                                            {% with "progress-green" as color_class %}
+                                                <div class="progress-fill {{ color_class }}" style="--percent: {{ percent }}%;">
+                                                    {{ flight.available_seats }}/{{ flight.total_seats }}
+                                                </div>
                                             {% endwith %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Últimas Reservas -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Últimas Reservas</h6>
-                    <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                            <li><a class="dropdown-item" href="#">Ver reporte</a></li>
-                            <li><a class="dropdown-item" href="#">Exportar</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Usuario</th>
-                                    <th>Vuelo</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for booking in recent_bookings %}
-                                <tr>
-                                    <td>{{ booking.booking_reference }}</td>
-                                    <td>{{ booking.user.get_short_name }}</td>
-                                    <td>{{ booking.flight.flight_number }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if booking.status == 'CONFIRMED' %}success{% elif booking.status == 'PENDING' %}warning{% else %}info{% endif %}">
-                                            {{ booking.get_status_display }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Sección de Aerolíneas -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Aerolíneas</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for airline in airlines %}
-                        <div class="col-md-3 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    {% if airline.logo %}
-                                    <img src="{{ airline.logo.url }}" alt="{{ airline.name }}" class="img-fluid mb-3" style="max-height: 50px;">
-                                    {% endif %}
-                                    <h5 class="card-title">{{ airline.name }}</h5>
-                                    <p class="card-text text-muted">{{ airline.flight_count }} vuelos activos</p>
-                                    <a href="#" class="btn btn-sm btn-outline-primary">Ver vuelos</a>
+                                        {% elif percent > 40 %}
+                                            {% with "progress-yellow" as color_class %}
+                                                <div class="progress-fill {{ color_class }}" style="--percent: {{ percent }}%;">
+                                                    {{ flight.available_seats }}/{{ flight.total_seats }}
+                                                </div>
+                                            {% endwith %}
+                                        {% else %}
+                                            {% with "progress-red" as color_class %}
+                                                <div class="progress-fill {{ color_class }}" style="--percent: {{ percent }}%;">
+                                                    {{ flight.available_seats }}/{{ flight.total_seats }}
+                                                </div>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endwith %}
                                 </div>
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
                         {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Últimas Reservas -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h3>Últimas Reservas</h3>
+                    <div class="card-actions">
+                        <a href="#" class="action-link">Exportar</a>
                     </div>
                 </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Usuario</th>
+                            <th>Vuelo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in recent_bookings %}
+                        <tr>
+                            <td>{{ booking.booking_reference }}</td>
+                            <td>{{ booking.user.get_short_name }}</td>
+                            <td>{{ booking.flight.flight_number }}</td>
+                            <td>
+                                <span class="status-badge 
+                                    {% if booking.status == 'CONFIRMED' %}confirmed
+                                    {% elif booking.status == 'PENDING' %}pending
+                                    {% else %}canceled{% endif %}">
+                                    {{ booking.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
-</div>
 
-{% if show_permission_denied %}
-<div class="custom-toast">
-    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header bg-danger text-white">
-            <i class="bi bi-x-octagon-fill"></i>
-            <strong class="me-auto">Acceso Denegado</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body">
-            No tienes permisos para acceder al panel de administración.
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Mostrar mensajes generales de admin -->
-{% if show_admin_messages %}
-<div class="custom-toast">
-    <div class="toast-container">
-        {% for message in messages %}
-        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-{{ message.tags }} text-white">
-                <i class="bi 
-                    {% if message.tags == 'success' %}bi-check-circle-fill
-                    {% elif message.tags == 'danger' %}bi-exclamation-octagon-fill
-                    {% elif message.tags == 'warning' %}bi-exclamation-triangle-fill
-                    {% else %}bi-info-circle-fill{% endif %}"></i>
-                <strong class="me-auto">Administración</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        <!-- Aeropuertos Section -->
+        <div class="content-card">
+            <div class="card-header">
+                <h3>Aeropuertos</h3>
+                <div class="card-actions">
+                    <a href="{% url 'admin_airport_create' %}" class="action-link">Nuevo Aeropuerto</a>
+                </div>
             </div>
-            <div class="toast-body">
-                {{ message }}
+            <div class="airports-grid">
+                {% for airport in airports %}
+                <div class="airport-card">
+                    <div class="airport-info">
+                        <h4>{{ airport.code }}</h4>
+                        <p>{{ airport.name }}</p>
+                        <small>{{ airport.city }}, {{ airport.country }}</small>
+                    </div>
+                    <div class="airport-actions">
+                        <a href="#" class="action-link">Editar</a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
-    </div>
+    </main>
 </div>
-{% endif %}
 
 <style>
-    .card {
-        border-radius: 0.5rem;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+/* Estilos personalizados */
+.admin-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f5f6fa;
+}
+
+.admin-sidebar {
+    width: 250px;
+    background: #ffffff;
+    padding: 1.5rem;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.progress-bar {
+    height: 20px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.progress-green {
+    background-color: #4CAF50;
+}
+.progress-yellow {
+    background-color: #FFC107;
+}
+.progress-red {
+    background-color: #F44336;
+}
+.progress-fill {
+    height: 100%;
+    width: var(--percent, 0%);
+    transition: width 0.3s ease-in-out;
+}
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.8em;
+}
+
+.status-badge.confirmed { background: #4CAF50; color: white; }
+.status-badge.pending { background: #FFC107; color: black; }
+.status-badge.canceled { background: #F44336; color: white; }
+
+/* Estilos generales */
+.admin-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f5f6fa;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Sidebar */
+.admin-sidebar {
+    width: 250px;
+    background: #ffffff;
+    padding: 1.5rem;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    position: fixed;
+    height: 100%;
+}
+
+.sidebar-header {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 1.5rem;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.25rem;
+    color: #2c3e50;
+}
+
+.logo i {
+    font-size: 1.8rem;
+    color: #3498db;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #7f8c8d;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    background: #f8f9fa;
+    color: #3498db;
+}
+
+.nav-item.active {
+    background: #3498db20;
+    color: #3498db;
+    font-weight: 500;
+}
+
+.nav-item i {
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+/* Contenido principal */
+.admin-main {
+    flex: 1;
+    margin-left: 250px;
+    padding: 2rem;
+}
+
+/* Header */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+}
+
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+.search-container i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #95a5a6;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 16px 10px 40px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-profile i {
+    font-size: 2rem;
+    color: #7f8c8d;
+    cursor: pointer;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-content h3 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.stat-content p {
+    color: #7f8c8d;
+    margin-bottom: 16px;
+}
+
+.stat-icon {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    font-size: 1.8rem;
+    color: #3498db30;
+}
+
+.stat-link {
+    display: block;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+.admin-sidebar.collapsed {
+    width: 70px;
+}
+
+.admin-sidebar.collapsed .sidebar-nav span,
+.admin-sidebar.collapsed .logo span,
+.admin-sidebar.collapsed .sidebar-footer span {
+    display: none;
+}
+
+.admin-main.expanded {
+    margin-left: 70px;
+}
+
+/* Tablas */
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.card-header h3 {
+    color: #2c3e50;
+    font-size: 1.2rem;
+}
+
+.card-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-link {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 12px;
+    color: #7f8c8d;
+    font-weight: 500;
+    border-bottom: 2px solid #eee;
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    color: #2c3e50;
+}
+
+.data-table tr:hover td {
+    background: #f8f9fa;
+}
+
+/* Progress Bar */
+.progress-bar {
+    height: 24px;
+    background: #ecf0f1;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    transition: width 0.3s ease;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge.confirmed { background: #27ae60; color: white; }
+.status-badge.pending { background: #f1c40f; color: black; }
+.status-badge.canceled { background: #e74c3c; color: white; }
+
+/* Aeropuertos */
+.airports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.airport-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease;
+}
+
+.airport-card:hover {
+    transform: translateY(-3px);
+}
+
+.airport-info h4 {
+    color: #2c3e50;
+    margin-bottom: 4px;
+    font-size: 1.1rem;
+}
+
+.airport-info p {
+    color: #7f8c8d;
+    margin-bottom: 4px;
+}
+
+.airport-info small {
+    color: #bdc3c7;
+    font-size: 0.85rem;
+}
+
+.airport-actions {
+    margin-top: 1rem;
+    text-align: right;
+}
+body.dark-mode {
+    background-color: #121212;
+    color: #f0f0f0;
+}
+
+body.dark-mode .admin-sidebar {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+}
+
+body.dark-mode .admin-main {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+body.dark-mode .stat-card,
+body.dark-mode .content-card {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .nav-item {
+    color: #cccccc;
+}
+
+body.dark-mode .nav-item.active,
+body.dark-mode .nav-item:hover {
+    background-color: #333;
+    color: #1abc9c;
+}
+
+body.dark-mode .data-table th,
+body.dark-mode .data-table td {
+    color: #eee;
+    border-color: #333;
+}
+
+footer {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        display: none;
     }
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    
+    .admin-main {
+        margin-left: 0;
+        padding: 1.5rem;
     }
-    .progress {
-        border-radius: 0.25rem;
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
     }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .search-container {
+        width: 100%;
+    }
+}
+
+/* Transiciones */
+a, button, .nav-item, .stat-card {
+    transition: all 0.2s ease;
+}
 </style>
-{% endblock %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Alternar modo oscuro
+    const darkModeBtn = document.getElementById("toggleDarkMode");
+    darkModeBtn.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+    });
+
+    // Alternar sidebar colapsado
+    const toggleSidebarBtn = document.getElementById("toggleSidebar");
+    const sidebar = document.querySelector(".admin-sidebar");
+    const main = document.querySelector(".admin-main");
+
+    toggleSidebarBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+        main.classList.toggle("expanded");
+    });
+});
+
+</script>
+{% endblock %} 
