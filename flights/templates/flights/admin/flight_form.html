@@ -42,32 +42,32 @@
                                 </span>
                             </td>
                             <td>
+                                {% if booking.status != 'CANCELLED' %}
                                 <form method="post" action="{% url 'admin_edit_flight' flight.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="remove_booking" value="{{ booking.id }}">
-                                    {% with msg="¿Cancelar esta reserva?" %}
                                     {% if booking.status == 'CONFIRMED' %}
-                                        {% with full_msg=msg|add:" Se notificará sobre el reembolso." %}
                                         <button type="submit" class="btn btn-sm btn-danger"
-                                                onclick="return confirm('{{ full_msg|escapejs }}')">
+                                                onclick="return confirm('¿Cancelar reserva confirmada? Se notificará sobre el reembolso.')">
                                             <i class="fas fa-trash"></i> Cancelar
                                         </button>
-                                        {% endwith %}
                                     {% elif booking.status == 'PENDING' %}
-                                        {% with full_msg=msg|add:" Se cancelará el proceso de pago." %}
                                         <button type="submit" class="btn btn-sm btn-danger"
-                                                onclick="return confirm('{{ full_msg|escapejs }}')">
+                                                onclick="return confirm('¿Cancelar reserva pendiente? Se cancelará el proceso de pago.')">
                                             <i class="fas fa-trash"></i> Cancelar
                                         </button>
-                                        {% endwith %}
                                     {% else %}
                                         <button type="submit" class="btn btn-sm btn-danger"
-                                                onclick="return confirm('{{ msg|escapejs }}')">
+                                                onclick="return confirm('¿Cancelar esta selección?')">
                                             <i class="fas fa-trash"></i> Cancelar
                                         </button>
                                     {% endif %}
-                                    {% endwith %}
                                 </form>
+                                {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>
+                                    <i class="fas fa-ban"></i> Cancelada
+                                </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

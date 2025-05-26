@@ -134,9 +134,6 @@ def book_flight(request, flight_id):
                     
                     seats_to_update.update(status='RESERVED', booking=booking)
                     
-                    # Actualizar disponibilidad del vuelo
-                    flight.available_seats = F('available_seats') - passengers
-                    flight.save()
                     
                     # Redirigir a la confirmación de pago
                     return redirect('payment_confirmation', booking_id=booking.id)
@@ -186,13 +183,14 @@ def payment_confirmation(request, booking_id):
         form = PaymentConfirmationForm(request.POST, instance=payment)  # Usa instance correctamente
         if form.is_valid():
             try:
-                payment = form.save(commit=False)
                 payment.status = 'COMPLETED'
                 payment.save()
                 
                 # Actualizar estado de la reserva
                 booking.status = 'CONFIRMED'
                 booking.save()
+                
+                booking.send_confirmation_email()
                 
                 # Actualizar asientos
                 booking.booked_seats.update(status='OCCUPIED')
@@ -383,7 +381,7 @@ def admin_edit_flight(request, flight_id):
         if 'remove_booking' in request.POST:
             booking_id = request.POST.get('remove_booking')
             try:
-                booking = Booking.objects.select_related('payment', 'user').get(id=booking_id, flight=flight)
+                booking = Booking.objects.get(id=booking_id, flight=flight)
                 
                 # Mensaje según estado
                 status_msg = {
@@ -392,9 +390,9 @@ def admin_edit_flight(request, flight_id):
                 }.get(booking.status, '')
                 
                 if booking.cancel(notify_user=True):
-                    messages.success(request, f'Reserva cancelada correctamente. {status_msg}')
+                    messages.success(request, 'Reserva cancelada correctamente')
                 else:
-                    messages.error(request, 'Error al cancelar la reserva')
+                    messages.warning(request, 'La reserva ya estaba cancelada')
                 
                 return redirect('admin_edit_flight', flight_id=flight.id)
             except Booking.DoesNotExist:

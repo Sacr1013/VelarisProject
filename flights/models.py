@@ -7,7 +7,7 @@ import random
 import string
 from io import BytesIO
 from datetime import datetime, timedelta
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Q
 from django.core.mail import send_mail
 from django.core.files.base import ContentFile
@@ -16,6 +16,7 @@ from django.core.validators import MinValueValidator
 from accounts.models import CustomUser
 from django.utils import timezone
 from geopy.distance import geodesic
+
 
 class Airport(models.Model):
     """
@@ -434,28 +435,33 @@ class Booking(models.Model):
     
     # flights/models.py
     def cancel(self, notify_user=True):
-        """Cancela la reserva y notifica al usuario según el estado"""
         try:
-            # Actualizar los asientos en una sola operación
-            Seat.objects.filter(booking=self).update(status='AVAILABLE', booking=None)
-            
-            # Si hay pago asociado, marcarlo como reembolsado (solo en estado)
-            if hasattr(self, 'payment'):
-                self.payment.status = 'REFUNDED'
-                self.payment.save()
-            
-            # Notificar al usuario si es necesario
-            if notify_user:
-                self.send_cancellation_email_async()
-            
-            # Eliminar la reserva
-            self.delete()
-            return True
+            with transaction.atomic():
+                if self.status == 'CANCELLED':
+                    return False
+                    
+                old_status = self.status  # Guardar estado anterior
+                self.status = 'CANCELLED'
+                self.save(update_fields=['status'])
+                
+                Seat.objects.filter(booking=self).update(
+                    status='AVAILABLE',
+                    booking=None
+                )
+                
+                if hasattr(self, 'payment'):
+                    self.payment.status = 'REFUNDED'
+                    self.payment.save()
+                
+                if notify_user:
+                    self.send_cancellation_email_async(old_status)  # Pasar estado anterior
+                
+                return True
         except Exception as e:
-            logger.error(f"Error al cancelar reserva {self.id}: {str(e)}")
+            logger.error(f"Error cancelando reserva {self.id}: {str(e)}")
             return False
 
-    def send_cancellation_email_async(self):
+    def send_cancellation_email_async(self, old_status):
         """Envía email de cancelación de forma asíncrona según el estado"""
         from django.core.mail import send_mail
         from django.conf import settings
@@ -478,25 +484,13 @@ class Booking(models.Model):
                 - Pasajeros: {self.passengers}
                 '''
                 
-                # Mensajes específicos por estado
-                if self.status == 'CONFIRMED':
-                    message += '''
-                    
-                    Nuestro equipo se comunicará contigo en las próximas 48 horas
-                    para gestionar el proceso de reembolso correspondiente.
-                    '''
-                elif self.status == 'PENDING':
-                    message += '''
-                    
-                    El proceso de pago fue cancelado. Si tienes alguna duda
-                    sobre tu transacción, por favor contáctanos.
-                    '''
-                else:  # SELECTED u otros estados
-                    message += '''
-                    
-                    Tu selección ha sido cancelada. Si fue un error, puedes
-                    realizar una nueva reserva cuando lo desees.
-                    '''
+                # Mensaje según el estado anterior
+                if old_status == 'CONFIRMED':
+                    message += '\n\nSe ha iniciado el proceso de reembolso.'
+                elif old_status == 'PENDING':
+                    message += '\n\nEl proceso de pago fue cancelado.'
+                else:
+                    message += '\n\nTu selección ha sido cancelada.'
                 
                 message += '''
                 
