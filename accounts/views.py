@@ -11,7 +11,7 @@ from axes.decorators import axes_dispatch
 from axes.models import AccessAttempt
 from axes.utils import reset  # Nueva importación útil
 from django.conf import settings
-from flights.models import Flight, Booking, Airline 
+from flights.models import Flight, Booking, Airline, Airport 
 from django.db.models import Count
 from datetime import datetime, timedelta
 
@@ -57,6 +57,7 @@ def login_view(request):
 
     return render(request, 'accounts/login.html', {'form': form, 'attempts_left': attempts_left})
 
+# views.py (actualización)
 @login_required
 def admin_dashboard(request):
     if not request.user.is_staff:
@@ -64,24 +65,28 @@ def admin_dashboard(request):
             'show_permission_denied': True
         })
     
-    # Estadísticas principales
+    # Estadísticas principales (CORRECCIÓN DE CLAVES Y NUEVAS ESTADÍSTICAS)
     today = datetime.now().date()
     stats = {
-        'total_flights': Flight.objects.count(),
-        'active_bookings': Booking.objects.filter(status='CONFIRMED').count(),
-        'pending_bookings': Booking.objects.filter(status='PENDING').count(),
-        'flights_today': Flight.objects.filter(departure_time__date=today).count(),
-        'flights_next_week': Flight.objects.filter(
-            departure_time__range=(today, today + timedelta(days=7))
-        ).count(),
+        'active_flights': Flight.objects.filter(departure_time__date=today).count(),
+        'today_bookings': Booking.objects.filter(booking_date__date=today).count(),
+        'total_users': CustomUser.objects.count(),
         'today_income': Booking.objects.filter(
             status='CONFIRMED',
             booking_date__date=today
         ).aggregate(Sum('total_price'))['total_price__sum'] or 0,
-        'total_users': CustomUser.objects.count()
+        'monthly_income': Booking.objects.filter(
+            status='CONFIRMED',
+            booking_date__month=today.month
+        ).aggregate(Sum('total_price'))['total_price__sum'] or 0,
     }
     
-    # Datos para las tablas
+    # Aeropuertos más populares (NUEVA CONSULTA)
+    airports = Airport.objects.annotate(
+        total_flights=Count('departures')
+    ).order_by('-total_flights')[:6]
+    
+    # Resto de datos
     recent_flights = Flight.objects.select_related(
         'airline', 'departure_airport', 'arrival_airport'
     ).order_by('departure_time')[:5]
@@ -90,13 +95,11 @@ def admin_dashboard(request):
         'user', 'flight'
     ).order_by('-booking_date')[:5]
     
-    airlines = Airline.objects.annotate(flight_count=Count('flight'))
-    
     return render(request, 'accounts/admin_dashboard.html', {
         'stats': stats,
         'recent_flights': recent_flights,
         'recent_bookings': recent_bookings,
-        'airlines': airlines,
+        'airports': airports,  # NOMBRE CORRECTO DE VARIABLE
         'show_admin_messages': True
     })
 

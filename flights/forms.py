@@ -2,8 +2,11 @@
 from django import forms
 from django.core.validators import MinValueValidator
 from django.utils import timezone
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from .models import Flight, Booking, Airport, Seat, Payment
+import random
+import string
+
 
 class FlightSearchForm(forms.Form):
     origin = forms.ModelChoiceField(
@@ -119,6 +122,7 @@ class FlightCreateForm(forms.ModelForm):
     class Meta:
         model = Flight
         fields = '__all__'
+        exclude = ['airline']
         widgets = {
             'departure_time': forms.DateTimeInput(attrs={
                 'type': 'datetime-local',
@@ -128,9 +132,29 @@ class FlightCreateForm(forms.ModelForm):
                 'type': 'datetime-local',
                 'min': datetime.now().strftime('%Y-%m-%dT%H:%M')
             }),
-            'total_seats': forms.NumberInput(attrs={'min': 1}),
-            'available_seats': forms.NumberInput(attrs={'min': 0}),
+            'total_seats': forms.NumberInput(attrs={
+                'min': 1,
+                'max': 200  # Límite máximo realista
+            }),
+            'available_seats': forms.NumberInput(attrs={
+                'min': 0,
+                'max': 200  # Debe coincidir con total_seats
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['flight_number'].initial = self.generate_unique_flight_number()
+            self.fields['flight_number'].widget.attrs['readonly'] = True
+            self.fields['flight_number'].required = True
+
+    def generate_unique_flight_number(self):
+        while True:
+            suffix = ''.join(random.choices(string.digits, k=4))
+            flight_number = f"VL{suffix}"
+            if not Flight.objects.filter(flight_number=flight_number).exists():
+                return flight_number
     
     def clean(self):
         cleaned_data = super().clean()
@@ -138,6 +162,24 @@ class FlightCreateForm(forms.ModelForm):
         arrival_airport = cleaned_data.get('arrival_airport')
         departure_time = cleaned_data.get('departure_time')
         arrival_time = cleaned_data.get('arrival_time')
+        flight_number = cleaned_data.get('flight_number')
+        total_seats = cleaned_data.get('total_seats')
+        available_seats = cleaned_data.get('available_seats')
+
+        if departure_time and departure_time < timezone.now() + timedelta(hours=1):
+            self.add_error('departure_time', 
+                "¡Los vuelos deben crearse al menos con 1 hora de anticipación!")
+            
+        if total_seats and available_seats:
+            if available_seats > total_seats:
+                self.add_error('available_seats', 
+                    "¡Los asientos disponibles no pueden ser mayores al total!")
+        if total_seats <= 0:
+                self.add_error('total_seats',
+                    "¡El total de asientos debe ser mayor a 0!")
+
+        if flight_number and Flight.objects.filter(flight_number=flight_number).exists():
+            self.add_error('flight_number', 'Este número de vuelo ya existe. Recarga para generar uno nuevo.')
         
         if departure_airport and arrival_airport and departure_airport == arrival_airport:
             raise forms.ValidationError("El aeropuerto de origen y destino no pueden ser iguales")
@@ -148,12 +190,14 @@ class FlightCreateForm(forms.ModelForm):
         if departure_time and departure_time < timezone.now():
             raise forms.ValidationError("No se pueden crear vuelos en fechas pasadas")
         
+
         return cleaned_data
 
 class FlightEditForm(forms.ModelForm):
     class Meta:
         model = Flight
         fields = '__all__'
+        exclude = ['airline']
         widgets = {
             'departure_time': forms.DateTimeInput(
                 attrs={'type': 'datetime-local'},
@@ -163,23 +207,49 @@ class FlightEditForm(forms.ModelForm):
                 attrs={'type': 'datetime-local'},
                 format='%Y-%m-%dT%H:%M'
             ),
-            'total_seats': forms.NumberInput(attrs={'min': 1}),
-            'available_seats': forms.NumberInput(attrs={'min': 0}),
+            'total_seats': forms.NumberInput(attrs={
+                'min': 1,
+                'max': 200  # Límite máximo realista
+            }),
+            'available_seats': forms.NumberInput(attrs={
+                'min': 0,
+                'max': 200  # Debe coincidir con total_seats
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
-            self.initial['departure_time'] = self.instance.departure_time.strftime('%Y-%m-%dT%H:%M')
-            self.initial['arrival_time'] = self.instance.arrival_time.strftime('%Y-%m-%dT%H:%M')
-    
+            if 'flight_number' in self.fields:
+                self.fields['flight_number'].disabled = True
+                local_departure = timezone.localtime(self.instance.departure_time)
+                local_arrival = timezone.localtime(self.instance.arrival_time)
+                self.initial['departure_time'] = local_departure.strftime('%Y-%m-%dT%H:%M')
+                self.initial['arrival_time'] = local_arrival.strftime('%Y-%m-%dT%H:%M')
+    def clean_departure_time(self):
+        departure_time = self.cleaned_data['departure_time']
+        if self.instance.departure_time < timezone.now():
+            raise forms.ValidationError("¡No se puede modificar un vuelo histórico!")
+        return departure_time
+
     def clean(self):
         cleaned_data = super().clean()
         departure_airport = cleaned_data.get('departure_airport')
         arrival_airport = cleaned_data.get('arrival_airport')
         departure_time = cleaned_data.get('departure_time')
         arrival_time = cleaned_data.get('arrival_time')
-        
+        total_seats = cleaned_data.get('total_seats')
+        available_seats = cleaned_data.get('available_seats')
+
+        if total_seats and available_seats:
+            if available_seats > total_seats:
+                self.add_error('available_seats', 
+                    "¡Los asientos disponibles no pueden ser mayores al total!")
+        if self.instance.pk:
+            booked_seats = self.instance.total_seats - self.instance.available_seats
+            if cleaned_data.get('total_seats') < booked_seats:
+                self.add_error('total_seats', 
+                    f"No puede reducir la capacidad debajo de {booked_seats} asientos reservados!")
         if departure_airport and arrival_airport and departure_airport == arrival_airport:
             raise forms.ValidationError("El aeropuerto de origen y destino no pueden ser iguales")
         

@@ -15,6 +15,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from accounts.models import CustomUser
 from django.utils import timezone
+from geopy.distance import geodesic
 
 class Airport(models.Model):
     """
@@ -24,6 +25,8 @@ class Airport(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nombre del aeropuerto")
     city = models.CharField(max_length=100, verbose_name="Ciudad")
     country = models.CharField(max_length=100, verbose_name="País")
+    lat = models.FloatField(verbose_name="Latitud")
+    lng = models.FloatField(verbose_name="Longitud")
     timezone = models.CharField(
         max_length=50, 
         default='UTC',
@@ -127,15 +130,14 @@ class Flight(models.Model):
         Genera número de vuelo automático si no existe y valida datos antes de guardar
         """
         if not self.flight_number:
-            # Generar número de vuelo automático: AA123
-            prefix = ''.join(random.choices(string.ascii_uppercase, k=2))
-            suffix = ''.join(random.choices(string.digits, k=3))
-            self.flight_number = f"{prefix}{suffix}"
+            # Generar número de vuelo automático: VL123
+            suffix = ''.join(random.choices(string.digits, k=4))
+            self.flight_number = f"VL{suffix}"
             
             while Flight.objects.filter(flight_number=self.flight_number).exists():
-                prefix = ''.join(random.choices(string.ascii_uppercase, k=2))
-                suffix = ''.join(random.choices(string.digits, k=3))
-                self.flight_number = f"{prefix}{suffix}"
+                # Generar un nuevo número de vuelo si ya existe
+                suffix = ''.join(random.choices(string.digits, k=4))
+                self.flight_number = f"VL{suffix}"
     
     # Para nuevos vuelos, establecer asientos disponibles igual al total
         is_new = not self.pk
@@ -147,6 +149,14 @@ class Flight(models.Model):
     # Crear asientos si es un nuevo vuelo
         if is_new:
             self.create_seats()
+    
+    # Calcular hora de llegada si no está definida
+        if not self.pk or 'departure_time' in kwargs.get('update_fields', []) or \
+        'departure_airport' in kwargs.get('update_fields', []) or \
+        'arrival_airport' in kwargs.get('update_fields', []):
+            self.calculate_arrival_time()
+        
+        super().save(*args, **kwargs)
         
     def create_seats(self):
         """Crea todos los asientos para este vuelo de manera más robusta"""
@@ -209,6 +219,18 @@ class Flight(models.Model):
         for booking in bookings:
             booking.cancel(notify_user=True)
         super().delete(*args, **kwargs)
+
+    def calculate_duration(self):
+        """Calcula la duración basada en la distancia entre aeropuertos (900 km/h promedio)"""
+        origen = (self.departure_airport.lat, self.departure_airport.lng)
+        destino = (self.arrival_airport.lat, self.arrival_airport.lng)
+        distancia_km = geodesic(origen, destino).km
+        return timedelta(hours=distancia_km / 900)
+    
+    def calculate_arrival_time(self):
+        """Calcula la hora de llegada automáticamente"""
+        if self.departure_time and self.departure_airport and self.arrival_airport:
+            self.arrival_time = self.departure_time + self.calculate_duration()
 
 class Seat(models.Model):
     """

@@ -1,26 +1,45 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block title %}Eliminar Usuario - Velaris{% endblock %}
 {% block content %}
 <div class="container-fluid">
-    <h1 class="mt-4">Eliminar Usuario</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">Eliminar Usuario</h1>
+    </div>
     
-    <div class="card mb-4">
+    <div class="card mb-4 custom-card">
         <div class="card-header bg-danger text-white">
             <h5 class="mb-0">Confirmar eliminación</h5>
         </div>
         <div class="card-body">
-            <p>¿Estás seguro que deseas eliminar al usuario <strong>{{ user.username }}</strong>?</p>
-            <p class="text-danger">Esta acción no se puede deshacer y se eliminarán todas sus reservas asociadas.</p>
+            <div class="alert alert-danger">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle"></i> Advertencia
+                </h5>
+                <p>¿Estás seguro que deseas eliminar al usuario <strong>{{ user.username }}</strong>?</p>
+                <hr>
+                <p class="mb-0">Esta acción no se puede deshacer y se eliminarán todas sus reservas asociadas.</p>
+            </div>
             
             <form method="post">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Confirmar eliminación
-                </button>
-                <a href="{% url 'admin_user_detail' user.id %}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Confirmar eliminación
+                    </button>
+                    <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </a>
+                </div>
             </form>
         </div>
     </div>
 </div>
+<script>
+// Bloquear navegación
+history.pushState(null, null, location.href);
+window.onpopstate = function() {
+  history.go(1);
+};
+</script>
 {% endblock %}

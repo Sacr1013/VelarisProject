@@ -8,11 +8,14 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Q, Count, Sum,F
+from django.db.models import Q, Count, Sum, F, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.template.loader import render_to_string
+from django.http import JsonResponse
 from accounts.forms import CustomUserChangeForm
 from accounts.models import CustomUser
+from django.views.decorators.http import require_GET
 from .forms import (
     BookingForm, FlightCreateForm, FlightEditForm, FlightSearchForm,
     FlightSelectForm, AirportForm, SeatSelectionForm, PaymentConfirmationForm
@@ -340,19 +343,29 @@ def admin_flight_list(request):
 
 @user_passes_test(is_admin)
 def admin_create_flight(request):
-    if request.method == 'POST':
-        form = FlightCreateForm(request.POST)
-        if form.is_valid():
-            form.save()
-            # ✅ Mensaje tras creación
-            messages.success(request, 'Vuelo creado exitosamente!')
-            return redirect('admin_flight_list')  # ✅ Redirige a lista
-    else:
-        form = FlightCreateForm()
-    return render(request, 'flights/admin/flight_form.html', {
-        'form': form,
-        'title': 'Crear nuevo vuelo'
-    })
+    try:
+        # Obtener la aerolínea Velair
+        velair = Airline.objects.get(name="Velair")  # Asegúrate que el nombre coincida exactamente
+        
+        if request.method == 'POST':
+            form = FlightCreateForm(request.POST)
+            if form.is_valid():
+                flight = form.save(commit=False)
+                flight.airline = velair  # Asignar aerolínea
+                flight.save()
+                messages.success(request, 'Vuelo creado exitosamente!')
+                return redirect('admin_flight_list')
+        else:
+            form = FlightCreateForm()
+            
+        return render(request, 'flights/admin/flight_form.html', {
+            'form': form,
+            'title': 'Crear nuevo vuelo'
+        })
+        
+    except Airline.DoesNotExist:
+        messages.error(request, 'Error: Primero debe crear la aerolínea "Velair"')
+        return redirect('admin_dashboard')
 
 @user_passes_test(is_admin)
 def admin_edit_flight(request, flight_id):
@@ -360,6 +373,10 @@ def admin_edit_flight(request, flight_id):
         Flight.objects.select_related('airline', 'departure_airport', 'arrival_airport'), 
         id=flight_id
     )
+
+    if flight.departure_time < timezone.now():
+        messages.error(request, "No se puede editar un vuelo que ya ha despegado.")
+        return redirect('admin_flight_list')
     
     if request.method == 'POST':
         # Manejar eliminación de reserva
@@ -424,20 +441,47 @@ def admin_delete_flight(request, flight_id):
         'has_bookings': has_bookings
     })
 
+@require_GET
+def calculate_arrival_time(request):
+    dep_id = request.GET.get('dep')
+    arr_id = request.GET.get('arr')
+    dep_time = request.GET.get('time')
+    
+    try:
+        departure_airport = Airport.objects.get(id=dep_id)
+        arrival_airport = Airport.objects.get(id=arr_id)
+        departure_time = timezone.make_aware(datetime.fromisoformat(dep_time))
+        
+        # Calcular usando el modelo
+        flight = Flight(
+            departure_airport=departure_airport,
+            arrival_airport=arrival_airport,
+            departure_time=departure_time
+        )
+        flight.calculate_arrival_time()
+        
+        return JsonResponse({
+            'arrival_time': timezone.localtime(flight.arrival_time).strftime('%Y-%m-%dT%H:%M')
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
 @user_passes_test(is_admin)
 def admin_user_list(request):
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', 'all')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
+    user_type = request.GET.get('type', 'all')
     
     users = CustomUser.objects.all().order_by('-date_joined')
     
+    # Filtros
     if search_query:
         users = users.filter(
             Q(username__icontains=search_query) |
             Q(email__icontains=search_query) |
-            Q(phone_number__icontains=search_query)
+            Q(phone__icontains=search_query)
         )
     
     if status_filter == 'active':
@@ -445,10 +489,25 @@ def admin_user_list(request):
     elif status_filter == 'inactive':
         users = users.filter(is_active=False)
     
+    if user_type == 'staff':
+        users = users.filter(is_staff=True)
+    elif user_type == 'users':
+        users = users.filter(is_staff=False)
+    
     if date_from:
         users = users.filter(date_joined__date__gte=date_from)
     if date_to:
         users = users.filter(date_joined__date__lte=date_to)
+    
+    # Anotar con pagos pendientes (usando 'status' en lugar de 'is_paid')
+    users = users.annotate(
+        has_pending_payments=Exists(
+            Payment.objects.filter(
+                booking__user=OuterRef('pk'),
+                status='PENDING'  # Cambia 'PENDING' por el valor correcto según tu modelo
+            )
+        )
+    )
     
     paginator = Paginator(users, 15)
     page = request.GET.get('page')
@@ -463,10 +522,37 @@ def admin_user_list(request):
     return render(request, 'flights/admin/user_list.html', {
         'users': users,
         'search_query': search_query,
-        'status': status_filter,
+        'status_filter': status_filter,
         'date_from': date_from,
         'date_to': date_to,
+        'user_type': user_type,
     })
+
+@user_passes_test(is_admin)
+def notify_pending_payment(request, user_id):
+    if request.method == 'POST':
+        user = get_object_or_404(CustomUser, id=user_id)
+        pending_payments = Payment.objects.filter(booking__user=user, is_paid=False)
+        
+        if pending_payments.exists():
+            # Enviar correo electrónico
+            subject = 'Recordatorio de pago pendiente'
+            message = render_to_string('flights/emails/payment_reminder.txt', {
+                'user': user,
+                'payments': pending_payments
+            })
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            return JsonResponse({'status': 'success'})
+        
+        return JsonResponse({'status': 'error', 'message': 'No hay pagos pendientes'}, status=400)
+    
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=405)
 
 @user_passes_test(is_admin)
 def admin_user_detail(request, user_id):

@@ -1,0 +1,264 @@
+/* Fuente moderna */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  color: #333;
+  margin: 0;
+  padding: 2rem;
+}
+
+/* Contenedor principal */
+.usuarios {
+  max-width: 1200px;
+  margin: auto;
+  padding: 1rem;
+}
+
+/* Buscador */
+.usuarios-busqueda .input-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.usuarios-busqueda input[type="text"] {
+  flex: 1;
+  min-width: 220px;
+  padding: 0.65rem 1rem 0.65rem 2.5rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: #333;
+}
+
+.icono-busqueda {
+  position: absolute;
+  left: 1rem;
+  width: 18px;
+  height: 18px;
+  color: #999;
+  pointer-events: none;
+}
+
+.btn-filtro {
+  background-color: #fff;
+  border: 1px solid #dcdcdc;
+  border-radius: 9999px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-filtro:hover {
+  background-color: #f3f3f3;
+}
+
+/* Tabs */
+.usuarios-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab,
+.tab-activo {
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border: none;
+  background: #f1f1f1;
+  color: #333;
+  cursor: pointer;
+}
+
+.tab-activo {
+  background: #2f80ed;
+  color: white;
+  font-weight: 600;
+}
+
+/* Tabla */
+.tabla-contenedor {
+  overflow-x: auto;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.usuarios-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.usuarios-tabla thead th {
+  text-align: left;
+  font-weight: 600;
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+.usuarios-tabla tbody td {
+  padding: 1rem;
+  border-top: 1px solid #f0f0f0;
+  vertical-align: middle;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.usuarios-tabla tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Usuario + avatar */
+.usuario-detalle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.usuario-detalle img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: #ccc;
+}
+
+.usuario-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.usuario-info span {
+  font-weight: 500;
+}
+
+.usuario-info small {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.verificado {
+  background: #e6f4ea;
+  color: #27ae60;
+}
+
+.rol-admin {
+  background: #f0e6ff;
+  color: #9b51e0;
+}
+
+.rol-agente {
+  background: #e6f0ff;
+  color: #2d9cdb;
+}
+
+.rol-cliente {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.estado-activo {
+  background: #e6f4ea;
+  color: #27ae60;
+}
+
+.estado-inactivo {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.estado-pendiente {
+  background: #fdf3d6;
+  color: #e2b93b;
+}
+
+.estado-suspendido {
+  background: #ffe6e6;
+  color: #eb5757;
+}
+
+/* Acciones */
+.acciones {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.icono {
+  width: 18px;
+  height: 18px;
+  fill: #888;
+  transition: fill 0.2s;
+}
+
+.acciones a:hover .icono {
+  fill: #333;
+}
+
+/* Total */
+.usuarios-total {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #666;
+  padding: 0.5rem 1rem;
+}
+
+/* Paginación */
+.usuarios-paginacion {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.usuarios-paginacion a,
+.pagina-activa {
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  background: #f0f0f0;
+  color: #333;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pagina-activa {
+  background: #2f80ed;
+  color: white;
+}
+
+/* Sin registros */
+.sin-registros {
+  text-align: center;
+  font-style: italic;
+  color: #aaa;
+  padding: 1rem;
+}

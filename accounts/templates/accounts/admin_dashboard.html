@@ -5,17 +5,22 @@
 <div class="admin-container">
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-plane"></i>
-                <span>Velaris</span>
-            </div>
-            <button id="toggleSidebar" class="btn btn-light">
-                <i class="fas fa-bars"></i>
-            </button>
+    <div class="sidebar-header">
+        <div class="logo">
+            <i class="fas fa-plane"></i>
+            <span class="logo-text">Velaris</span>
         </div>
+        <button id="toggleSidebar" class="btn btn-light">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
         
         <nav class="sidebar-nav">
+            <div class="nav-item" id="darkModeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Modo Oscuro</span>
+            </div>
+
             <a href="#" class="nav-item active">
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
@@ -24,10 +29,7 @@
                 <i class="fas fa-plane-departure"></i>
                 <span>Vuelos</span>
             </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Reservas</span>
-            </a>
+            
             <a href="{% url 'admin_user_list' %}" class="nav-item">
                 <i class="fas fa-users"></i>
                 <span>Usuarios</span>
@@ -50,9 +52,9 @@
     <main class="admin-main">
         <!-- Header -->
         <header class="admin-header">
-            <button id="toggleDarkMode" class="btn btn-sm btn-dark">🌙</button>
             <div class="user-greeting">
-                <span>Hola, {{ user.get_short_name }}</span>
+                <span>Hola, {{ user.username }}</span>
+            </div>
             <div class="header-controls">
                 <div class="user-profile">
                     <i class="fas fa-user-circle"></i>
@@ -71,14 +73,14 @@
                 <a href="{% url 'admin_flight_list' %}" class="stat-link">Ver todos →</a>
             </div>
             
-            <div class="stat-card">
+            <!-- <div class="stat-card">
                 <div class="stat-content">
                     <h3>{{ stats.today_bookings }}</h3>
                     <p>Reservas Hoy</p>
                 </div>
                 <i class="fas fa-calendar-check stat-icon"></i>
                 <a href="#" class="stat-link">Ver reporte →</a>
-            </div>
+            </div> -->
             
             <div class="stat-card">
                 <div class="stat-content">
@@ -652,7 +654,50 @@ body.dark-mode .data-table td {
     color: #eee;
     border-color: #333;
 }
+body.dark-mode .stat-card,
+body.dark-mode .content-card {
+    background: #2d2d2d;
+    border: 1px solid #404040;
+}
 
+body.dark-mode .data-table {
+    background: #252525;
+}
+
+body.dark-mode .stat-link,
+body.dark-mode .action-link {
+    color: #4dabf7;
+}
+
+/* Aeropuertos más populares (ESTILO MEJORADO) */
+.airports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.airport-card {
+    position: relative;
+    overflow: hidden;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.airport-card::after {
+    content: attr(data-popularity);
+    position: absolute;
+    top: 10px;
+    right: -30px;
+    background: #4dabf7;
+    color: white;
+    padding: 5px 30px;
+    transform: rotate(45deg);
+    font-size: 0.8em;
+}
+
+body.dark-mode .airport-card {
+    background: linear-gradient(135deg, #2d2d2d 0%, #404040 100%);
+}
 footer {
     display: none !important;
 }
@@ -660,9 +705,25 @@ footer {
 /* Responsive */
 @media (max-width: 768px) {
     .admin-sidebar {
-        display: none;
+        position: fixed;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
     }
     
+    .admin-sidebar.collapsed {
+        transform: translateX(0);
+        width: 70px;
+    }
+    
+    .admin-main.expanded {
+        margin-left: 0;
+    }
+    
+    .admin-sidebar.collapsed .nav-item span {
+        display: none;
+    }
+
     .admin-main {
         margin-left: 0;
         padding: 1.5rem;
@@ -693,23 +754,35 @@ a, button, .nav-item, .stat-card {
 }
 </style>
 <script>
+// Scripts actualizados (responsive y dark mode)
 document.addEventListener("DOMContentLoaded", () => {
-    // Alternar modo oscuro
-    const darkModeBtn = document.getElementById("toggleDarkMode");
-    darkModeBtn.addEventListener("click", () => {
-        document.body.classList.toggle("dark-mode");
-    });
+    // Toggle Sidebar Responsive
+    const toggleSidebar = () => {
+        const sidebar = document.querySelector('.admin-sidebar');
+        const main = document.querySelector('.admin-main');
+        sidebar.classList.toggle('collapsed');
+        main.classList.toggle('expanded');
+        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    };
 
-    // Alternar sidebar colapsado
-    const toggleSidebarBtn = document.getElementById("toggleSidebar");
-    const sidebar = document.querySelector(".admin-sidebar");
-    const main = document.querySelector(".admin-main");
+    // Dark Mode
+    const toggleDarkMode = () => {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    };
 
-    toggleSidebarBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("collapsed");
-        main.classList.toggle("expanded");
+    // Cargar estado inicial
+    if (localStorage.getItem('sidebarCollapsed') === 'true') toggleSidebar();
+    if (localStorage.getItem('darkMode') === 'true') toggleDarkMode();
+
+    // Event Listeners
+    document.getElementById('toggleSidebar').addEventListener('click', toggleSidebar);
+    document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+    
+    // Responsive para móviles
+    window.matchMedia("(max-width: 768px)").addEventListener("change", e => {
+        if (e.matches) toggleSidebar();
     });
 });
-
 </script>
 {% endblock %} 

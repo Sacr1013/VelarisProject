@@ -1,50 +1,83 @@
 {% extends 'base.html' %}
 {% block content %}
+
 <div class="container-fluid">
-    <h1 class="mt-4">Detalle de Usuario</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">Detalle de Usuario</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'admin_user_list' %}">Usuarios</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ user.username }}</li>
+            </ol>
+        </nav>
+    </div>
     
     <div class="row">
         <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
+            <div class="card mb-4 custom-card">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Información del Usuario</h5>
                 </div>
                 <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">ID:</dt>
-                        <dd class="col-sm-8">{{ user.id }}</dd>
-                        
-                        <dt class="col-sm-4">Nombre de usuario:</dt>
-                        <dd class="col-sm-8">{{ user.username }}</dd>
-                        
-                        <dt class="col-sm-4">Email:</dt>
-                        <dd class="col-sm-8">{{ user.email }}</dd>
-                        
-                        <dt class="col-sm-4">Teléfono:</dt>
-                        <dd class="col-sm-8">{{ user.phone_number|default:"-" }}</dd>
-                        
-                        <dt class="col-sm-4">Fecha registro:</dt>
-                        <dd class="col-sm-8">{{ user.date_joined|date:"d/m/Y H:i" }}</dd>
-                        
-                        <dt class="col-sm-4">Último login:</dt>
-                        <dd class="col-sm-8">{{ user.last_login|date:"d/m/Y H:i"|default:"-" }}</dd>
-                        
-                        <dt class="col-sm-4">Estado:</dt>
-                        <dd class="col-sm-8">
-                            {% if user.is_active %}
-                            <span class="badge bg-success">Activo</span>
-                            {% else %}
-                            <span class="badge bg-danger">Inactivo</span>
-                            {% endif %}
-                        </dd>
-                    </dl>
+                    <div class="user-details">
+                        <div class="detail-item">
+                            <span class="detail-label">ID:</span>
+                            <span class="detail-value">{{ user.id }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Nombre de usuario:</span>
+                            <span class="detail-value">{{ user.username }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email:</span>
+                            <span class="detail-value">{{ user.email }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Teléfono:</span>
+                            <span class="detail-value">{{ user.phone_number|default:"-" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Tipo de usuario:</span>
+                            <span class="detail-value">
+                                {% if user.is_staff %}
+                                <span class="badge bg-info">Staff</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Cliente</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Fecha registro:</span>
+                            <span class="detail-value">{{ user.date_joined|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Último login:</span>
+                            <span class="detail-value">{{ user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Estado:</span>
+                            <span class="detail-value">
+                                {% if user.is_active %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
                     
-                    <div class="mt-4">
-                        <a href="{% url 'admin_user_edit' user.id %}" class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
+                    <div class="mt-4 d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'admin_user_edit' user.id %}" class="btn btn-warning">
+                                <i class="fas fa-edit me-1"></i> Editar
+                            </a>
+                            <a href="{% url 'admin_user_delete' user.id %}" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i> Eliminar
+                            </a>
+                        </div>
                         <a href="{% url 'admin_user_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
+                            <i class="fas fa-arrow-left me-1"></i> Volver al listado
                         </a>
                     </div>
                 </div>
@@ -52,20 +85,24 @@
         </div>
         
         <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Reservas del Usuario</h5>
+            <div class="card mb-4 custom-card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Reservas del Usuario</h5>
+                        <span class="badge bg-light text-dark">{{ bookings.count }} reservas</span>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% if bookings %}
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm table-hover">
                             <thead>
                                 <tr>
                                     <th>Ref.</th>
                                     <th>Vuelo</th>
                                     <th>Fecha</th>
                                     <th>Estado</th>
+                                    <th>Pago</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -79,17 +116,34 @@
                                             {{ booking.get_status_display }}
                                         </span>
                                     </td>
+                                    <td>
+                                        {% if booking.payment and booking.payment.is_paid %}
+                                        <span class="badge bg-success">Pagado</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Pendiente</span>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                     {% else %}
-                    <p class="text-muted">El usuario no tiene reservas.</p>
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">El usuario no tiene reservas registradas</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+// Bloquear navegación
+history.pushState(null, null, location.href);
+window.onpopstate = function() {
+  history.go(1);
+};
+</script>
 {% endblock %}

@@ -19,12 +19,14 @@ urlpatterns = [
     path('management/flights/create/', views.admin_create_flight, name='admin_create_flight'),
     path('management/flights/edit/<int:flight_id>/', views.admin_edit_flight, name='admin_edit_flight'),
     path('management/flights/delete/<int:flight_id>/', views.admin_delete_flight, name='admin_delete_flight'),
+    path('api/calculate-arrival/', views.calculate_arrival_time, name='calculate_arrival'),
     
     # Vistas de administración - Usuarios
     path('management/users/', views.admin_user_list, name='admin_user_list'),
     path('management/users/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),
     path('management/users/<int:user_id>/edit/', views.admin_user_edit, name='admin_user_edit'),
     path('management/users/<int:user_id>/delete/', views.admin_user_delete, name='admin_user_delete'),
+    path('management/users/<int:user_id>/notify-payment/', views.notify_pending_payment, name='notify_pending_payment'),
     
     # Vistas de administración - Aeropuertos
     path('management/airports/', views.admin_airport_list, name='admin_airport_list'),

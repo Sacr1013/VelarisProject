@@ -115,7 +115,71 @@ footer {
     overflow-y: auto;
     padding: 10px;
 }
+/* Estilos para la gestión de usuarios */
+.custom-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
 
+.custom-card .card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.user-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.detail-item {
+    margin-bottom: 1rem;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #555;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.detail-value {
+    display: block;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+/* Mejoras para formularios */
+.needs-validation .form-control, 
+.needs-validation .form-select {
+    border-radius: 5px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+}
+
+.needs-validation .form-control:focus, 
+.needs-validation .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Breadcrumb personalizado */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+    text-decoration: none;
+    color: #6c757d;
+}
+
+.breadcrumb-item.active {
+    color: #495057;
+    font-weight: 500;
+}
 /* Animación para el formulario */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
