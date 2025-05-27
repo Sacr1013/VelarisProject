@@ -267,13 +267,34 @@ def select_flight(request, flight_id):
 @login_required
 def confirm_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    selected_seats = request.session.get('selected_seats', [])
     
-    if booking.status == 'SELECTED':
-        booking.status = 'PENDING'
-        booking.save()
-        return redirect('payment_confirmation', booking_id=booking.id)
-    
-    return redirect('dashboard')
+    try:
+        with transaction.atomic():
+            # Obtener y validar asientos
+            seats = Seat.objects.filter(
+                id__in=selected_seats, 
+                status='AVAILABLE',
+                flight=booking.flight
+            )
+            
+            if seats.count() != booking.passengers:
+                messages.error(request, "Algunos asientos ya no están disponibles")
+                return redirect('select_seats', flight_id=booking.flight.id)
+            
+            # Actualizar asientos y reserva
+            seats.update(status='RESERVED', booking=booking)
+            booking.seats.set(seats)
+            booking.status = 'CONFIRMED'
+            booking.save()
+            
+            messages.success(request, "Reserva confirmada exitosamente!")
+            return redirect('booking_detail', booking_id=booking.id)
+            
+    except Exception as e:
+        logger.error(f"Error confirmando reserva: {str(e)}")
+        messages.error(request, "Ocurrió un error al confirmar la reserva")
+        return redirect('dashboard')
 
 def is_admin(user):
     return user.is_authenticated and user.is_staff

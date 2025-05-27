@@ -190,7 +190,21 @@ class Flight(models.Model):
         except Exception as e:
             logger.error(f"Error creando asientos para vuelo {self.id}: {str(e)}")
             return False
-    
+    @property
+    def origin(self):
+        return self.departure_airport.code
+        
+    @property
+    def destination(self):
+        return self.arrival_airport.code
+
+    @property
+    def origin_city(self):
+        return self.departure_airport.city
+
+    @property
+    def destination_city(self):
+        return self.arrival_airport.city
     @property
     def duration(self):
         """Duración del vuelo como propiedad"""
@@ -232,6 +246,8 @@ class Flight(models.Model):
         """Calcula la hora de llegada automáticamente"""
         if self.departure_time and self.departure_airport and self.arrival_airport:
             self.arrival_time = self.departure_time + self.calculate_duration()
+
+
 
 class Seat(models.Model):
     """
@@ -327,6 +343,11 @@ class Booking(models.Model):
         default='SELECTED',
         db_index=True,
         verbose_name="Estado"
+    )
+    seats = models.ManyToManyField(
+        'Seat',
+        related_name='bookings',
+        verbose_name="Asientos seleccionados"
     )
     
     class Meta:

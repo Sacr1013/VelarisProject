@@ -1,0 +1,78 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reserva {{ booking.booking_reference }}</title>
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .section { margin-bottom: 15px; }
+        .badge { 
+            background-color: #28a745; 
+            color: white; 
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 5px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 style="margin-bottom: 5px;">Reserva {{ booking.booking_reference }}</h2>
+        <span class="badge">{{ booking.get_status_display }}</span>
+    </div>
+
+    <div class="section">
+        <h3 style="margin-bottom: 5px;">Información del Vuelo</h3>
+        <table>
+            <tr>
+                <td><strong>Ruta:</strong></td>
+                <td>{{ booking.flight.departure_airport }} → {{ booking.flight.arrival_airport }}</td>
+            </tr>
+            <tr>
+                <td><strong>Salida:</strong></td>
+                <td>{{ booking.flight.departure_time|date:"d M Y H:i" }}</td>
+            </tr>
+            <tr>
+                <td><strong>Llegada:</strong></td>
+                <td>{{ booking.flight.arrival_time|date:"d M Y H:i" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="mb-4">
+        <h4>Asientos Reservados</h4>
+        <div class="d-flex flex-wrap gap-2">
+            {% for seat in booking.booked_seats.all %}
+                <span class="badge bg-primary p-2">{{ seat.seat_number }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="margin-bottom: 5px;">Detalles de la Reserva</h3>
+        <table>
+            <tr>
+                <td><strong>Pasajeros:</strong></td>
+                <td>{{ booking.passengers }}</td>
+            </tr>
+            <tr>
+                <td><strong>Precio Total:</strong></td>
+                <td>${{ booking.total_price|intcomma }} COP</td>
+            </tr>
+            <tr>
+                <td><strong>Fecha de Reserva:</strong></td>
+                <td>{{ booking.booking_date|date:"d M Y H:i" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; font-size: 10px;">
+        <p>Gracias por elegir Velaris</p>
+        <p>www.velaris.com - contacto@velaris.com</p>
+    </div>
+</body>
+</html>

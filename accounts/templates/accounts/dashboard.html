@@ -42,11 +42,11 @@
             </div>
         </div>
         
-        <div class="col-md-8">
+        <div class="col-md-8"> 
             <!-- Sección de vuelos seleccionados -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0">
-                    <h5 class="mb-0">Mis Selecciones</h5>
+                    <h5 class="mb-0 text-dark">Mis Selecciones</h5>
                 </div>
                 <div class="card-body">
                     {% for booking in selected_bookings %}
@@ -72,12 +72,12 @@
                     <p class="text-muted">No tienes vuelos seleccionados</p>
                     {% endfor %}
                 </div>
-            </div>
+            </div> 
 
             <!-- Mis Reservas Recientes -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-0">
-                    <h5 class="mb-0">Mis Reservas Recientes</h5>
+                    <h5 class="mb-0 text-dark">Mis Reservas Recientes</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -92,7 +92,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for booking in confirmed_bookings|slice:":5" %}
+                                {% for booking in recent_bookings|slice:":5" %}
                                 <tr>
                                     <td>{{ booking.booking_reference }}</td>
                                     <td>{{ booking.flight }}</td>
@@ -106,8 +106,15 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <a href="#" class="btn btn-sm btn-outline-primary">Ver</a>
+                                        {% if booking.status == 'CONFIRMED' %}
+                                            <a href="{% url 'booking_detail_dashboard' booking.id %}" class="btn btn-sm btn-outline-primary">Ver/Descargar</a>
+                                        {% elif booking.status == 'CANCELLED' %}
+                                            <a href="{% url 'hide_booking' booking.id %}" class="btn btn-sm btn-outline-danger">Retirar</a>
+                                        {% else %}
+                                            <a href="#" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                        {% endif %}
                                     </td>
+                                    
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -123,10 +130,10 @@
             <!-- Próximos Viajes -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0">
-                    <h5 class="mb-0">Próximos Viajes</h5>
+                    <h5 class="mb-0 text-dark">Próximos Viajes</h5>
                 </div>
                 <div class="card-body">
-                    {% for booking in confirmed_bookings|slice:":2" %}
+                    {% for booking in confirmed_upcoming|slice:":2" %}
                     <div class="d-flex align-items-center {% if not forloop.last %}mb-4{% endif %}">
                         <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
                             <i class="fas fa-plane text-primary" style="font-size: 1.5rem;"></i>

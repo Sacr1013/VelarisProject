@@ -14,6 +14,13 @@ from django.conf import settings
 from flights.models import Flight, Booking, Airline, Airport 
 from django.db.models import Count
 from datetime import datetime, timedelta
+from django.db.models import Case, When, IntegerField
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -110,13 +117,61 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    selected_bookings = request.user.booking_set.filter(status='SELECTED')
-    confirmed_bookings = request.user.booking_set.exclude(status='SELECTED')
+    hidden_bookings = request.session.get('hidden_bookings', [])
+    
+    selected_bookings = request.user.booking_set.filter(status='SELECTED').exclude(id__in=hidden_bookings)
+    
+    recent_bookings = request.user.booking_set.exclude(status='SELECTED').exclude(id__in=hidden_bookings).annotate(
+        status_priority=Case(
+            When(status='CONFIRMED', then=0),
+            default=1,
+            output_field=IntegerField(),
+        )
+    ).order_by('status_priority', '-flight__departure_time')
+    
+    confirmed_upcoming = request.user.booking_set.filter(status='CONFIRMED').exclude(id__in=hidden_bookings).order_by('flight__departure_time')
     
     return render(request, 'accounts/dashboard.html', {
         'selected_bookings': selected_bookings,
-        'confirmed_bookings': confirmed_bookings
+        'recent_bookings': recent_bookings,
+        'confirmed_upcoming': confirmed_upcoming
     })
+def booking_detail_dashboard(request, booking_id):
+    booking = get_object_or_404(
+        request.user.booking_set.select_related('flight__departure_airport', 'flight__arrival_airport').prefetch_related('seats'), 
+        id=booking_id
+    )
+    return render(request, 'accounts/user_dashboard/booking_detail_dsh.html', {'booking': booking})
+
+def hide_booking(request, booking_id):
+    hidden_bookings = request.session.get('hidden_bookings', [])
+    if booking_id not in hidden_bookings:
+        hidden_bookings.append(booking_id)
+        request.session['hidden_bookings'] = hidden_bookings
+    return redirect('dashboard')
+
+def booking_pdf(request, booking_id):
+    booking = get_object_or_404(request.user.booking_set, id=booking_id)
+    
+    template_path = 'accounts/user_dashboard/booking_pdf.html'
+    context = {'booking': booking, 'user': request.user}
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'filename="reserva_{booking.booking_reference}.pdf"'
+    
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # Generar PDF
+    pisa_status = pisa.CreatePDF(
+        html, 
+        dest=response,
+        encoding='UTF-8'
+    )
+    
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
+    return response
 
 def password_reset_request(request):
     if request.method == 'POST':
