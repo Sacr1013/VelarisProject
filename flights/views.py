@@ -8,11 +8,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
+from django.db import IntegrityError
+from django.db import connection
 from django.db.models import Q, Count, Sum, F, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.template.loader import render_to_string
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from accounts.forms import CustomUserChangeForm
 from accounts.models import CustomUser
 from django.views.decorators.http import require_GET
@@ -21,6 +23,12 @@ from .forms import (
     FlightSelectForm, AirportForm, SeatSelectionForm, PaymentConfirmationForm
 )
 from .models import Airline, Airport, Booking, Flight, Seat, Payment
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+import pandas as pd
+import pytz
+from decimal import Decimal
+
 
 def home(request):
     today = date.today()
@@ -439,6 +447,226 @@ def admin_delete_flight(request, flight_id):
         'has_bookings': has_bookings
     })
 
+
+@user_passes_test(is_admin)
+def admin_export_flights(request):
+    try:
+        # Replicar misma lógica de filtros
+        flights = Flight.objects.all().select_related(
+            'airline', 'departure_airport', 'arrival_airport'
+        )
+        
+        # Aplicar filtros (misma lógica que admin_flight_list)
+        params = request.GET.dict()
+        
+        if params.get('flight_number'):
+            flights = flights.filter(flight_number__icontains=params['flight_number'])
+        if params.get('origin'):
+            flights = flights.filter(departure_airport__code__icontains=params['origin'])
+        if params.get('destination'):
+            flights = flights.filter(arrival_airport__code__icontains=params['destination'])
+        if params.get('date_from'):
+            flights = flights.filter(departure_time__date__gte=params['date_from'])
+        if params.get('date_to'):
+            flights = flights.filter(departure_time__date__lte=params['date_to'])
+        if params.get('airline'):
+            flights = flights.filter(airline__name__icontains=params['airline'])
+        if params.get('status', 'active') == 'active':
+            flights = flights.filter(is_active=True)
+        elif params.get('status') == 'inactive':
+            flights = flights.filter(is_active=False)
+        
+        # Optimizar consulta
+        flights = flights.order_by('-departure_time')
+
+        # Crear Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Vuelos"
+
+        # Configurar cabeceras
+        headers = [
+            ("Número Vuelo", 20),
+            ("Aerolínea", 25),
+            ("Origen", 15),
+            ("Destino", 15),
+            ("Salida", 25),
+            ("Llegada", 25),
+            ("Asientos Totales", 15),
+            ("Disponibles", 15),
+            ("Estado", 15),
+        ]
+
+        for col_num, (header, width) in enumerate(headers, 1):
+            ws.column_dimensions[get_column_letter(col_num)].width = width
+            ws.cell(row=1, column=col_num, value=header).style = 'Headline 2'
+
+        # Llenar datos
+        for row_num, flight in enumerate(flights, 2):
+            ws.cell(row=row_num, column=1, value=flight.flight_number)
+            ws.cell(row=row_num, column=2, value=str(flight.airline))
+            ws.cell(row=row_num, column=3, value=flight.departure_airport.code)
+            ws.cell(row=row_num, column=4, value=flight.arrival_airport.code)
+            ws.cell(row=row_num, column=5, value=flight.departure_time.astimezone().isoformat())
+            ws.cell(row=row_num, column=6, value=flight.arrival_time.astimezone().isoformat())
+            ws.cell(row=row_num, column=7, value=flight.total_seats)
+            ws.cell(row=row_num, column=8, value=flight.available_seats)
+            ws.cell(row=row_num, column=9, value="Activo" if flight.is_active else "Inactivo")
+
+        # Preparar respuesta
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={
+                'Content-Disposition': f'attachment; filename="Vuelos_Exportados_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx"'
+            },
+        )
+        wb.save(response)
+        return response
+
+    except Exception as e:
+        messages.error(request, f"Error al exportar: {str(e)}")
+        return redirect('admin_flight_list')
+
+
+
+# @user_passes_test(is_admin)
+# @transaction.atomic
+# def admin_import_flights(request):
+#     if request.method == 'POST':
+#         try:
+#             file = request.FILES['file']
+#             df = pd.read_excel(file, engine='openpyxl')
+
+#             # Resetear secuencia de manera confiable
+#             try:
+#                 with connection.cursor() as cursor:
+#                     cursor.execute(
+#                         "SELECT setval(pg_get_serial_sequence('flights_flight', 'id'), "
+#                         "coalesce(MAX(id), 1), true) FROM flights_flight;"  # true en lugar de false
+#                     )
+#                     cursor.execute("SELECT currval(pg_get_serial_sequence('flights_flight', 'id'))")
+#                     current_seq = cursor.fetchone()[0]
+#                     print(f"Secuencia ajustada a: {current_seq}")
+#             except Exception as e:
+#                 print(f"Error crítico ajustando secuencia: {str(e)}")
+#                 raise
+
+#             # Debug: Mostrar estructura del DataFrame
+#             print("\n" + "="*50)
+#             print("ESTRUCTURA DEL ARCHIVO EXCEL:")
+#             print("Columnas:", df.columns.tolist())
+#             print("Primeras 3 filas:")
+#             print(df.head(3))
+            
+#             # Eliminar columna ID si existe
+#             if 'id' in df.columns:
+#                 print("\n¡Advertencia: Columna 'id' detectada! Eliminándola...")
+#                 df = df.drop(columns=['id'])
+            
+#             # Convertir a lista de diccionarios
+#             data = df.to_dict('records')
+            
+#             success = 0
+#             errors = []
+            
+#             for index, record in enumerate(data):
+#                 try:
+#                     print("\n" + "-"*50)
+#                     print(f"PROCESANDO FILA {index+2}:")
+#                     print(record)
+                    
+#                     with transaction.atomic():
+#                         # ===== 1. VALIDAR AEROPUERTOS =====
+#                         origen = record['Origen'].strip().upper()
+#                         destino = record['Destino'].strip().upper()
+                        
+#                         print(f"Buscando aeropuerto ORIGEN: {origen}")
+#                         origin = Airport.objects.get(code=origen)
+#                         print(f"Aeropuerto encontrado: {origin}")
+                        
+#                         print(f"Buscando aeropuerto DESTINO: {destino}")
+#                         destination = Airport.objects.get(code=destino)
+#                         print(f"Aeropuerto encontrado: {destination}")
+                        
+#                         # ===== 2. VALIDAR AEROLÍNEA =====
+#                         airline_name = record['Aerolínea'].strip()
+#                         print(f"Buscando aerolínea: {airline_name}")
+#                         airline = Airline.objects.get(name__iexact=airline_name)
+#                         print(f"Aerolínea encontrada: {airline}")
+                        
+#                         # ===== 3. CONVERTIR FECHAS =====
+#                         print("Procesando fechas...")
+#                         tz_origin = pytz.timezone(origin.timezone)
+#                         departure = tz_origin.localize(
+#                             pd.to_datetime(record['Salida']).to_pydatetime()
+#                         )
+                        
+#                         tz_dest = pytz.timezone(destination.timezone)
+#                         arrival = tz_dest.localize(
+#                             pd.to_datetime(record['Llegada']).to_pydatetime()
+#                         )
+#                         print(f"Salida (tz): {departure}")
+#                         print(f"Llegada (tz): {arrival}")
+                        
+#                         # ===== 4. VALIDAR PRECIO =====
+#                         print(f"Precio crudo: {record['Precio']} ({type(record['Precio'])})")
+#                         precio = Decimal(str(record['Precio'])).quantize(Decimal('0.00'))
+#                         print(f"Precio convertido: {precio}")
+                        
+#                         if precio <= 0:
+#                             raise ValueError("El precio debe ser mayor a 0")
+                        
+#                         # ===== 5. CREAR/ACTUALIZAR VUELO =====
+#                         flight_number = record['Número Vuelo'].strip().upper()
+#                         print(f"Intentando crear/actualizar vuelo {flight_number}...")
+                        
+#                         # Usar update_or_create para evitar duplicados
+#                         obj, created = Flight.objects.update_or_create(
+#                             flight_number=flight_number,
+#                             defaults={
+#                                 'departure_airport': origin,
+#                                 'arrival_airport': destination,
+#                                 'departure_time': departure,
+#                                 'arrival_time': arrival,
+#                                 'total_seats': record['Asientos Totales'],
+#                                 'available_seats': record['Disponibles'],
+#                                 'is_active': record['Estado'].strip().lower() == 'activo',
+#                                 'airline': airline,
+#                                 'price': precio
+#                             }
+#                         )
+                        
+#                         success += 1
+#                         print(f"Vuelo {'creado' if created else 'actualizado'} con éxito. ID: {obj.id}")
+
+#                 except Exception as e:
+#                     error_msg = f"Fila {index+2}: {str(e)}"
+#                     print(f"\n❌ ERROR: {error_msg}")
+#                     errors.append(error_msg)
+            
+#             # Resultados finales
+#             print("\n" + "="*50)
+#             print(f"RESUMEN DE IMPORTACIÓN:")
+#             print(f"Éxitos: {success}")
+#             print(f"Errores: {len(errors)}")
+            
+#             if errors:
+#                 messages.warning(request, f"Importación parcial: {success} éxitos, {len(errors)} errores")
+#                 print("\nERRORES DETALLADOS:")
+#                 for error in errors[:5]:  # Mostrar primeros 5 errores
+#                     print(f"- {error}")
+#             else:
+#                 messages.success(request, f"✅ {success} vuelos importados exitosamente!")
+            
+#             return redirect('admin_flight_list')       
+        
+#         except Exception as e:
+#             error_msg = f"❌ Error crítico: {str(e)}"
+#             print(error_msg)
+#             messages.error(request, error_msg)
+#             return redirect('admin_flight_list')
+    
+#     return redirect('admin_flight_list')
 @require_GET
 def calculate_arrival_time(request):
     dep_id = request.GET.get('dep')

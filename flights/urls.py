@@ -20,6 +20,8 @@ urlpatterns = [
     path('management/flights/edit/<int:flight_id>/', views.admin_edit_flight, name='admin_edit_flight'),
     path('management/flights/delete/<int:flight_id>/', views.admin_delete_flight, name='admin_delete_flight'),
     path('api/calculate-arrival/', views.calculate_arrival_time, name='calculate_arrival'),
+    path('management/flights/export/', views.admin_export_flights, name='admin_export_flights'),
+    # path('management/flights/import/', views.admin_import_flights, name='admin_import_flights'),
     
     # Vistas de administración - Usuarios
     path('management/users/', views.admin_user_list, name='admin_user_list'),
