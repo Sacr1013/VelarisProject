@@ -4,18 +4,18 @@ from dotenv import load_dotenv
 
 # Cargar variables del .env
 load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
-
+DB_SSLMODE = 'require' if 'neon.tech' in os.environ.get('DB_HOST', '') else 'disable'
 # Configuración de la base de datos
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER':  os.environ.get('DB_USER'),
+        'PASSWORD':  os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT', '5432'),  # Puerto por defecto de PostgreSQL
         'OPTIONS': {
-            'passfile': '.pgpass',  # Opcional: si usas archivo de contraseñas
+            'sslmode': 'require',  # Opcional: si usas archivo de contraseñas
         },
     }
 }
