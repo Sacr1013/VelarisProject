@@ -131,12 +131,12 @@ def password_reset_request(request):
                     'Se ha enviado un correo con instrucciones para restablecer tu contraseña. ' +
                     'Revisa tu bandeja de entrada.'
                 )
-                return redirect('login')
+                return redirect('password_reset_done')
             except CustomUser.DoesNotExist:
                 messages.error(request, 'No existe una cuenta con este correo electrónico')
     else:
         form = CustomPasswordResetForm()
-    return render(request, 'accounts/password_reset.html', {'form': form})
+    return render(request, 'accounts/password_reset_form.html', {'form': form})
 
 def password_reset_confirm(request, token):
     try:
@@ -158,6 +158,9 @@ def password_reset_confirm(request, token):
         'form': form,
         'validlink': True
     })
+
+def password_reset_complete(request):
+    return render(request, 'accounts/password_reset_done.html')
 
 def verify_email(request, token):
     try:
