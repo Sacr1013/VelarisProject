@@ -13,6 +13,7 @@ from axes.utils import reset  # Nueva importación útil
 from django.conf import settings
 from flights.models import Flight, Booking, Airline, Airport 
 from django.db.models import Count
+from django.contrib.admin.views.decorators import staff_member_required
 from datetime import datetime, timedelta
 from django.db.models import Case, When, IntegerField
 from django.shortcuts import get_object_or_404
@@ -25,6 +26,8 @@ from xhtml2pdf import pisa
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('admin_dashboard' if request.user.is_staff else 'dashboard')
+    
+    
 
     form = LoginForm(request, data=request.POST or None)
     attempts_left = settings.AXES_FAILURE_LIMIT
@@ -64,8 +67,7 @@ def login_view(request):
 
     return render(request, 'accounts/login.html', {'form': form, 'attempts_left': attempts_left})
 
-# views.py (actualización)
-@login_required
+@staff_member_required(login_url='home')
 def admin_dashboard(request):
     if not request.user.is_staff:
         return render(request, 'accounts/admin_dashboard.html', {
@@ -224,17 +226,21 @@ def verify_email(request, token):
             user.email_verified = True
             user.is_active = True
             user.save()
-            messages.success(
-                request,
-                '¡Tu correo electrónico ha sido verificado correctamente! ' +
-                'Ahora puedes iniciar sesión.'
-            )
+            
+            # Especificar el backend de autenticación
+            if not request.user.is_authenticated:
+                from django.contrib.auth import login
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            
+            messages.success(request, '¡Verificación exitosa! Bienvenido a Velaris 2.0')
         else:
-            messages.info(request, 'Este correo electrónico ya había sido verificado anteriormente')
+            messages.info(request, 'Esta cuenta ya fue verificada anteriormente')
+            
+        return redirect('dashboard' if user.is_authenticated else 'login')
+        
     except CustomUser.DoesNotExist:
-        messages.error(request, 'El enlace de verificación no es válido o ha expirado')
-    
-    return redirect('login')
+        messages.error(request, 'Enlace de verificación inválido o expirado')
+        return redirect('login')
 
 class RegisterView(CreateView):
     form_class = CustomUserCreationForm

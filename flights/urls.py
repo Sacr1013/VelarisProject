@@ -1,5 +1,6 @@
 # flights/urls.py
 from django.urls import path
+from django.contrib.admin.views.decorators import staff_member_required
 from . import views
 
 
@@ -22,7 +23,7 @@ urlpatterns = [
     path('api/calculate-arrival/', views.calculate_arrival_time, name='calculate_arrival'),
     path('management/flights/export/', views.admin_export_flights, name='admin_export_flights'),
     # path('management/flights/import/', views.admin_import_flights, name='admin_import_flights'),
-    
+
     # Vistas de administración - Usuarios
     path('management/users/', views.admin_user_list, name='admin_user_list'),
     path('management/users/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),

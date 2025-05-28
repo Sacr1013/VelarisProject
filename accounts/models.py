@@ -7,6 +7,7 @@ import string
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.template.loader import render_to_string
 
 
 def generate_token(length=32):
@@ -30,21 +31,32 @@ class CustomUser(AbstractUser):
         return check_password(raw_password, self.password)
     
     def send_verification_email(self):
+        context = {
+            'user': self,
+            'verification_url': f"{settings.BASE_URL}/accounts/verify-email/{self.verification_token}/",
+            'support_email': settings.SUPPORT_EMAIL
+        }
+        
         subject = 'Verifica tu cuenta en Velaris 2.0'
-        message = f'''
-        Hola {self.username},
+        
+        # Versión HTML
+        html_message = render_to_string('emails/email_verification.html', context)
+        
+        # Versión de texto plano
+        text_message = f"""Hola {self.username},
         
         Por favor verifica tu cuenta haciendo clic en el siguiente enlace:
-        {settings.BASE_URL}/accounts/verify-email/{self.verification_token}/
-        
+        {context['verification_url']}
+
         Gracias,
-        El equipo de Velaris 2.0
-        '''
+        El equipo de Velaris 2.0"""
+
         send_mail(
             subject,
-            message,
+            text_message,
             settings.DEFAULT_FROM_EMAIL,
             [self.email],
+            html_message=html_message,
             fail_silently=False,
         )
     

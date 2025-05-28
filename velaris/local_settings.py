@@ -27,7 +27,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-
+SUPPORT_EMAIL = 'soporte@tudominio.com'
 # Clave secreta
 SECRET_KEY = os.getenv('SECRET_KEY')
 

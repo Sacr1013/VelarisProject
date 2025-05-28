@@ -1,5 +1,6 @@
 from django.contrib import messages
 from axes.handlers.proxy import AxesProxyHandler
+from django.shortcuts import redirect
 
 class AuthMessageMiddleware:
     def __init__(self, get_response):
@@ -24,4 +25,19 @@ class AuthMessageMiddleware:
                          "Demasiados intentos fallidos. Cuenta bloqueada temporalmente.", 
                          extra_tags='auth axes-lockout')
         
+        return response
+    
+class AdminURLAccessMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+    def __call__(self, request):
+        response = self.get_response(request)
+        
+        # Bloquear acceso a URLs que contengan '/admin' o '/management'
+        if not request.user.is_staff and any(
+            path in request.path for path in ['/admin', '/management']
+        ):
+            return redirect('home')
+            
         return response

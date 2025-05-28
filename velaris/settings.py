@@ -39,6 +39,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'velaris.middleware.AuthMessageMiddleware',
+    'velaris.middleware.AdminURLAccessMiddleware',
     'axes.middleware.AxesMiddleware',
 ]
 
@@ -115,7 +116,35 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-BASE_URL = 'http://127.0.0.1:8000'  # Para desarrollo
+ # Para desarrollo
+# settings.py
+
+# Configuración de hosts permitidos
+DEBUG = 'RENDER' not in os.environ
+ALLOWED_HOSTS = []
+
+# Desarrollo local
+if DEBUG:
+    ALLOWED_HOSTS += [
+        'localhost',
+        '127.0.0.1',
+        '0.0.0.0',
+        'velarisproject.onrender.com'  # Opcional si usas el mismo settings para desarrollo
+    ]
+
+# Configuración para Render
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Configuración de producción (asegúrate que DEBUG=False en producción)
+if not DEBUG:
+    ALLOWED_HOSTS = [
+        'velarisproject.onrender.com',
+        'www.velarisproject.onrender.com'
+    ]
+# En settings.py
+BASE_URL = 'http://127.0.0.1:8000' if DEBUG else 'https://velarisproject.onrender.com'
 
 MESSAGE_TAGS = {
     messages.DEBUG: 'info',
@@ -152,6 +181,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Velaris <no-reply@velaris.com>' 
+SUPPORT_EMAIL = 'soporte@tudominio.com'
 try:
     from .local_settings import *
 except ImportError:
