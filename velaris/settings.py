@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'whitenoise.runserver_nostatic',
     'accounts',
     'flights',
     'crispy_forms',
@@ -121,7 +122,10 @@ AUTHENTICATION_BACKENDS = [
 
 # Configuración de hosts permitidos
 DEBUG = 'RENDER' not in os.environ
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'velarisproject.onrender.com',
+    'www.velarisproject.onrender.com',
+]
 
 # Desarrollo local
 if DEBUG:
