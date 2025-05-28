@@ -47,6 +47,7 @@
                 <a class="nav-link {% if request.resolver_match.url_name == 'jetlag' %}active{% endif %}" href="{% url 'jetlag' %}">
                     <i class="fas fa-clock"></i>
                     <span>JetLag</span>
+                    <span class="badge-beta ms-2">BETA</span>
                 </a>
                 <a class="nav-link {% if request.resolver_match.url_name == 'anxiety' %}active{% endif %}" href="{% url 'anxiety' %}">
                     <i class="fas fa-heartbeat"></i>

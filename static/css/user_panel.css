@@ -949,6 +949,19 @@ input:focus, select:focus, textarea:focus {
         flex-grow: 1;
     }
 }
+.badge-beta {
+    display: inline-block;
+    background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 0.15em 0.6em;
+    margin-left: 0.3em;
+    letter-spacing: 1px;
+    vertical-align: middle;
+    box-shadow: 0 1px 4px rgba(56,189,248,0.10);
+}
 
 /* Mejoras de responsive para pantallas pequeñas */
 @media (max-width: 992px) {
