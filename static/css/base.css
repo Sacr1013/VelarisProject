@@ -1037,3 +1037,192 @@ footer a:hover {
 .float {
     animation: float 3s ease-in-out infinite;
 }
+/* Mensajes de confirmación y notificaciones */
+.confirm-message, .info-message, .success-message {
+    max-width: 420px;
+    margin: 3rem auto 2rem auto;
+    padding: 2rem 1.5rem;
+    background: #f8fafc;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(56,189,248,0.08);
+    color: #334155;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 500;
+}
+
+@media (max-width: 576px) {
+    .confirm-message, .info-message, .success-message {
+        padding: 1.2rem 0.5rem;
+        font-size: 1rem;
+    }
+}   
+/* Mensaje de éxito para restablecimiento de contraseña */
+.success-message {
+    max-width: 420px;
+    margin: 3rem auto 2rem auto;
+    padding: 2rem 1.5rem;
+    background: #f8fafc;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(56,189,248,0.08);
+    color: #22c55e;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 500;
+}
+.success-message .fa-check-circle {
+    color: #22c55e;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+.success-message a.btn {
+    margin-top: 1.2rem;
+    background: #38bdf8;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    display: inline-block;
+    transition: background 0.2s;
+}
+.success-message a.btn:hover {
+    background: #0ea5e9;
+    color: #fff;
+}
+@media (max-width: 576px) {
+    .success-message {
+        padding: 1.2rem 0.5rem;
+        font-size: 1rem;
+    }
+}
+/* Formulario de recuperación de contraseña */
+.password-reset-form, .card-body form {
+    max-width: 400px;
+    margin: 2.5rem auto;
+    padding: 2rem 1.5rem;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(56,189,248,0.08);
+}
+
+.password-reset-form label,
+.card-body form label {
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 0.2rem;
+    display: block;
+}
+
+.password-reset-form input,
+.card-body form input {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    background: #f8fafc;
+    color: #334155;
+    margin-bottom: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border 0.2s, background 0.2s;
+}
+
+.password-reset-form input:focus,
+.card-body form input:focus {
+    border-color: #38bdf8;
+    background: #fff;
+    outline: none;
+}
+
+.password-reset-form button,
+.card-body form button {
+    background: #38bdf8;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    width: 100%;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+}
+
+.password-reset-form button:hover,
+.card-body form button:hover {
+    background: #0ea5e9;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .password-reset-form, .card-body form {
+        padding: 1rem 0.5rem;
+        max-width: 100%;
+    }
+}
+/* Navbar glass effect y estilos modernos */
+.navbar-glass {
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 2px 16px rgba(56,189,248,0.07);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e5e7eb;
+    transition: background 0.3s;
+}
+
+.navbar-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    color: #38bdf8 !important;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-nav .nav-link {
+    color: #334155 !important;
+    font-weight: 500;
+    font-size: 1.08rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background 0.18s, color 0.18s;
+}
+
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+    background: #e0f2fe;
+    color: #0ea5e9 !important;
+}
+
+.btn-velaris {
+    background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);
+    color: #fff !important;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(56,189,248,0.08);
+    transition: background 0.18s, color 0.18s;
+}
+.btn-velaris:hover, .btn-velaris:focus {
+    background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
+    color: #fff !important;
+}
+
+.navbar-toggler {
+    border: none;
+    outline: none;
+}
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 2px #38bdf8;
+}
+
+/* Responsive: más aire en móvil */
+@media (max-width: 991px) {
+    .navbar-nav .nav-link {
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    .btn-velaris {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
