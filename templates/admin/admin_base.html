@@ -53,14 +53,9 @@
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Aeropuertos</span>
             </a>
-        </nav>
-        <div class="sidebar-footer">
-            <a href="{% url 'logout' %}" class="nav-item">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Cerrar sesión</span>
-            </a>
-        </div>
-    </aside>
+            <a href="{% url 'user_panel' %}" class="user-profile" title="Panel de usuario">
+                <i class="fas fa-user-cog"></i>
+            </a>    
 
     <!-- Main content -->
     <main class="admin-main">
