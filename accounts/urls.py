@@ -6,7 +6,8 @@ from .views import (
     verify_email, RegisterView, 
     password_reset_complete,  # <-- Usa la clase
     admin_dashboard,
-    booking_detail_dashboard, hide_booking, booking_pdf
+    booking_detail_dashboard, hide_booking, booking_pdf,
+    profile_view, user_bookings,jetlag_calculator, anxiety_tips 
 )
 
 
@@ -14,6 +15,10 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('dashboard/', dashboard, name='dashboard'),
+    path('profile/', profile_view, name='profile'),
+    path('bookings/', user_bookings, name='user_bookings'),
+    path('jetlag/', jetlag_calculator, name='jetlag'),
+    path('anxiety/', anxiety_tips, name='anxiety'),
     path('booking/<int:booking_id>/', booking_detail_dashboard, name='booking_detail_dashboard'),
     path('booking/hide/<int:booking_id>/', hide_booking, name='hide_booking'),
     path('booking/pdf/<int:booking_id>/', booking_pdf, name='booking_pdf'),

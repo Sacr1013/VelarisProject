@@ -1,0 +1,40 @@
+{% extends 'accounts/user_base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Manejo de Ansiedad - Velaris{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0">
+        <h4 class="mb-0">Consejos para Manejar la Ansiedad al Volar</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for tip in tips %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
+                                <i class="{{ tip.icon }} text-primary" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <h5 class="mb-0">{{ tip.title }}</h5>
+                        </div>
+                        <p class="text-muted">{{ tip.content }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="mt-4 p-3 bg-light rounded">
+            <h5>Recursos adicionales:</h5>
+            <ul>
+                <li><a href="#" target="_blank">Guía completa para superar el miedo a volar</a></li>
+                <li><a href="#" target="_blank">Ejercicios de relajación para hacer en el avión</a></li>
+                <li><a href="#" target="_blank">Foro de apoyo para personas con aerofobia</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

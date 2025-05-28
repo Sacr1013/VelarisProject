@@ -1,0 +1,56 @@
+{% extends 'accounts/user_base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Mis Reservas - Velaris{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0">
+        <h4 class="mb-0">Mis Reservas</h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Vuelo</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.booking_reference }}</td>
+                        <td>{{ booking.flight }}</td>
+                        <td>{{ booking.flight.departure_time|date:"d M Y" }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if booking.status == 'CONFIRMED' %}bg-success
+                                {% elif booking.status == 'PENDING' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ booking.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            {% if booking.status == 'CONFIRMED' %}
+                                <a href="{% url 'booking_detail_dashboard' booking.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    Ver/Descargar
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No tienes reservas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

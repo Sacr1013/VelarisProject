@@ -1,0 +1,76 @@
+{% extends 'accounts/user_base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Calculadora de JetLag - Velaris{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0">
+        <h4 class="mb-0">Calculadora de JetLag</h4>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Zona horaria de origen</label>
+                    <select name="timezone_from" class="form-select" required>
+                        {% for tz in timezones %}
+                        <option value="{{ tz }}">{{ tz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Zona horaria de destino</label>
+                    <select name="timezone_to" class="form-select" required>
+                        {% for tz in timezones %}
+                        <option value="{{ tz }}">{{ tz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Fecha de salida</label>
+                    <input type="date" name="departure" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Hora de salida</label>
+                    <input type="time" name="departure_time" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Fecha de llegada</label>
+                    <input type="date" name="arrival" class="form-control" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Calcular JetLag</button>
+        </form>
+        
+        {% if jetlag_info %}
+        <div class="mt-4 p-3 bg-light rounded">
+            <h5>Resultados:</h5>
+            <p><strong>Diferencia horaria:</strong> {{ jetlag_info.time_difference }}</p>
+            <p><strong>Tiempo estimado de adaptación:</strong> {{ jetlag_info.recovery_days }}</p>
+            
+            <h5 class="mt-3">Consejos para reducir el jetlag:</h5>
+            <ul class="list-group">
+                {% for tip in jetlag_info.tips %}
+                <li class="list-group-item">{{ tip }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if error %}
+        <div class="alert alert-danger mt-3">
+            {{ error }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

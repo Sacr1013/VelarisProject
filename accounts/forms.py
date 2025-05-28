@@ -6,6 +6,7 @@ from django.contrib.auth.forms import UserChangeForm
 from .models import CustomUser
 from django.db.models import Q
 from axes.models import AccessAttempt 
+from django.contrib.auth.password_validation import validate_password
 
 class LoginForm(AuthenticationForm):
     username = forms.EmailField(
@@ -32,8 +33,6 @@ class LoginForm(AuthenticationForm):
                 pass  # Django-axes manejará el intento fallido
         
         return cleaned_data
-
-
 
 class CustomPasswordResetForm(PasswordResetForm):
     email = forms.EmailField(
@@ -74,15 +73,50 @@ class CustomUserCreationForm(UserCreationForm):
             user.send_verification_email()  # Enviar correo de verificación
         return user
     
-class CustomUserChangeForm(UserChangeForm):
+class CustomUserChangeForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'phone', 'first_name', 'last_name', 'is_active')
+        fields = [
+            'email', 'first_name', 'last_name', 'profile_photo', 'phone', 
+            'seat_preference', 'meal_preference', 'language', 'currency'
+        ]
+        widgets = {
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'readonly': True
+            }),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'seat_preference': forms.Select(attrs={'class': 'form-select'}),
+            'meal_preference': forms.Select(attrs={'class': 'form-select'}),
+            'language': forms.Select(attrs={'class': 'form-select'}),
+            'currency': forms.Select(attrs={'class': 'form-select'}),
+            'profile_photo': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Personaliza los widgets si es necesario
-        self.fields['email'].widget.attrs.update({'class': 'form-control'})
-        self.fields['phone'].widget.attrs.update({'class': 'form-control'})
-        # Elimina el campo de contraseña ya que no se maneja aquí
-        self.fields.pop('password', None)
+class PasswordChangeForm(forms.Form):
+    current_password = forms.CharField(
+        label="Contraseña actual",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    new_password1 = forms.CharField(
+        label="Nueva contraseña",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    new_password2 = forms.CharField(
+        label="Confirmar nueva contraseña",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    def clean_new_password1(self):
+        password = self.cleaned_data.get('new_password1')
+        validate_password(password)
+        return password
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("new_password1")
+        password2 = cleaned_data.get("new_password2")
+        if password1 and password2 and password1 != password2:
+            raise ValidationError("Las contraseñas no coinciden.")
+        return cleaned_data

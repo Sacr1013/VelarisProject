@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import LoginForm, CustomPasswordResetForm, CustomSetPasswordForm, CustomUserCreationForm
+from .forms import LoginForm, CustomPasswordResetForm, CustomSetPasswordForm, CustomUserCreationForm, CustomUserChangeForm, PasswordChangeForm
 from .models import CustomUser
 from django.views.generic import CreateView
 from django.urls import reverse_lazy, reverse
@@ -22,6 +22,8 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
+import pytz
+from django.contrib.auth import update_session_auth_hash
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -138,6 +140,118 @@ def dashboard(request):
         'recent_bookings': recent_bookings,
         'confirmed_upcoming': confirmed_upcoming
     })
+
+from django.contrib.auth import update_session_auth_hash
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        user_form = CustomUserChangeForm(request.POST, request.FILES, instance=request.user)
+        password_form = PasswordChangeForm(request.POST)
+
+        if 'update_profile' in request.POST and user_form.is_valid():
+            user_form.save()
+            messages.success(request, 'Perfil actualizado correctamente')
+            return redirect('profile')
+
+        elif 'change_password' in request.POST and password_form.is_valid():
+            if request.user.check_password(password_form.cleaned_data['current_password']):
+                request.user.set_password(password_form.cleaned_data['new_password1'])
+                request.user.save()
+                update_session_auth_hash(request, request.user)
+                messages.success(request, 'Contraseña actualizada correctamente')
+                return redirect('profile')
+            else:
+                messages.error(request, 'La contraseña actual no es correcta')
+    else:
+        user_form = CustomUserChangeForm(instance=request.user)
+        password_form = PasswordChangeForm()
+
+    return render(request, 'accounts/profile.html', {
+        'user_form': user_form,
+        'password_form': password_form
+    })
+
+
+@login_required
+def user_bookings(request):
+    bookings = request.user.booking_set.all().order_by('-booking_date')
+    return render(request, 'accounts/bookings.html', {
+        'bookings': bookings
+    })
+
+@login_required
+def jetlag_calculator(request):
+    if request.method == 'POST':
+        departure = request.POST.get('departure')
+        arrival = request.POST.get('arrival')
+        departure_time = request.POST.get('departure_time')
+        timezone_from = request.POST.get('timezone_from')
+        timezone_to = request.POST.get('timezone_to')
+        
+        try:
+            # Cálculos de jetlag (ejemplo básico)
+            tz_from = pytz.timezone(timezone_from)
+            tz_to = pytz.timezone(timezone_to)
+            
+            # Aquí iría la lógica real de cálculo de jetlag
+            jetlag_info = {
+                'time_difference': "5 horas",
+                'recovery_days': "3 días",
+                'tips': [
+                    "Ajusta tu horario de sueño gradualmente antes del viaje",
+                    "Mantente hidratado durante el vuelo",
+                    "Expón tu cuerpo a la luz solar en el nuevo horario"
+                ]
+            }
+            
+            return render(request, 'accounts/jetlag.html', {
+                'jetlag_info': jetlag_info,
+                'form_data': request.POST
+            })
+            
+        except Exception as e:
+            return render(request, 'accounts/jetlag.html', {
+                'error': str(e)
+            })
+    
+    # Lista de zonas horarias para el select
+    timezones = pytz.common_timezones
+    
+    return render(request, 'accounts/jetlag.html', {
+        'timezones': timezones
+    })
+
+@login_required
+def anxiety_tips(request):
+    # Consejos para manejar la ansiedad al volar
+    tips = [
+        {
+            'title': 'Respiración controlada',
+            'content': 'Practica la técnica 4-7-8: inhala por 4 segundos, mantén por 7, exhala por 8.',
+            'icon': 'fas fa-wind'
+        },
+        {
+            'title': 'Distracción positiva',
+            'content': 'Lleva música relajante, podcasts interesantes o un libro que te guste.',
+            'icon': 'fas fa-headphones'
+        },
+        {
+            'title': 'Información es poder',
+            'content': 'Recuerda que volar es uno de los medios de transporte más seguros.',
+            'icon': 'fas fa-shield-alt'
+        },
+        {
+            'title': 'Comunica tu ansiedad',
+            'content': 'Informa a la tripulación, están entrenados para ayudar.',
+            'icon': 'fas fa-user-friends'
+        }
+    ]
+    
+    return render(request, 'accounts/anxiety.html', {
+        'tips': tips
+    })
+
 def booking_detail_dashboard(request, booking_id):
     booking = get_object_or_404(
         request.user.booking_set.select_related('flight__departure_airport', 'flight__arrival_airport').prefetch_related('seats'), 
