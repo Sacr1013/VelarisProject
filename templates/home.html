@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-
+{% load static %}
 {% block title %}Inicio - Velaris{% endblock %}
 
 {% block content %}
@@ -22,22 +22,18 @@
                                     <label for="origin" class="form-label">Origen</label>
                                     <select class="form-select" id="origin" name="origin" required>
                                         <option value="" selected disabled>Seleccionar</option>
-                                        <option value="1">Bogotá (BOG)</option>
-                                        <option value="2">Medellín (MDE)</option>
-                                        <option value="3">Cartagena (CTG)</option>
-                                        <option value="4">Miami (MIA)</option>
-                                        <option value="5">Madrid (MAD)</option>
+                                        {% for airport in airports %}
+                                            <option value="{{ airport.id }}">{{ airport.city }} ({{ airport.code }})</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label for="destination" class="form-label">Destino</label>
                                     <select class="form-select" id="destination" name="destination" required>
                                         <option value="" selected disabled>Seleccionar</option>
-                                        <option value="1">Bogotá (BOG)</option>
-                                        <option value="2">Medellín (MDE)</option>
-                                        <option value="3">Cartagena (CTG)</option>
-                                        <option value="4">Miami (MIA)</option>
-                                        <option value="5">Madrid (MAD)</option>
+                                        {% for airport in airports %}
+                                            <option value="{{ airport.id }}">{{ airport.city }} ({{ airport.code }})</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -225,6 +221,156 @@
         </div>
     </div>
 </section>
+<!-- Sobre Nosotros -->
+<section class="container py-5 bg-light">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-4">Sobre Velaris</h2>
+            <p class="text-muted">
+                En Velaris, conectamos personas, culturas y destinos desde hace más de 10 años. Nacimos con la visión de hacer que viajar sea accesible, cómodo y confiable para todos. Nuestra flota moderna, personal altamente calificado y compromiso con la innovación hacen que cada vuelo sea una experiencia memorable.
+            </p>
+            <p class="text-muted">
+                Con base en Colombia y operaciones internacionales, buscamos expandir nuestras alas hacia nuevos horizontes cada día. Más que una aerolínea, somos tu puente al mundo.
+            </p>
+        </div>
+        <div class="col-md-6 text-center">
+            <img src="{% static 'img/about-airplane.jpg' %}" alt="Avión Velaris" class="img-fluid rounded">
+        </div>
+    </div>
+</section>
+
+<!-- Información para Pasajeros -->
+<section class="container py-5">
+    <h2 class="fw-bold text-center mb-5">Información para Pasajeros</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <h5><i class="fas fa-suitcase-rolling me-2"></i>Equipaje</h5>
+            <p class="text-muted">Cada pasajero puede llevar una pieza de equipaje de mano de hasta 10kg. El equipaje facturado se cobra por separado y debe cumplir con nuestras políticas.</p>
+        </div>
+        <div class="col-md-4">
+            <h5><i class="fas fa-clock me-2"></i>Check-in</h5>
+            <p class="text-muted">Puedes hacer check-in online desde 48h antes de tu vuelo. Recomendamos llegar al aeropuerto al menos 2 horas antes para vuelos nacionales y 3 para internacionales.</p>
+        </div>
+        <div class="col-md-4">
+            <h5><i class="fas fa-plane-departure me-2"></i>Documentación</h5>
+            <p class="text-muted">Asegúrate de tener tu documento de identidad vigente. Para vuelos internacionales, el pasaporte y visa deben estar en regla.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Servicios a Bordo -->
+<section class="container py-5 bg-light">
+    <h2 class="fw-bold text-center mb-5">Servicios a Bordo</h2>
+    <div class="row text-center">
+        <div class="col-md-3">
+            <i class="fas fa-wifi fa-2x mb-3 text-primary"></i>
+            <h6>Wi-Fi Gratuito</h6>
+            <p class="text-muted">Navega, trabaja o comparte momentos en tiempo real mientras vuelas.</p>
+        </div>
+        <div class="col-md-3">
+            <i class="fas fa-music fa-2x mb-3 text-primary"></i>
+            <h6>Entretenimiento</h6>
+            <p class="text-muted">Películas, series y música para todos los gustos.</p>
+        </div>
+        <div class="col-md-3">
+            <i class="fas fa-coffee fa-2x mb-3 text-primary"></i>
+            <h6>Snacks y Bebidas</h6>
+            <p class="text-muted">Menú variado con opciones locales e internacionales.</p>
+        </div>
+        <div class="col-md-3">
+            <i class="fas fa-user-nurse fa-2x mb-3 text-primary"></i>
+            <h6>Atención Médica</h6>
+            <p class="text-muted">Asistencia básica en caso de emergencias durante el vuelo.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Preguntas Frecuentes -->
+<section class="container py-5">
+    <h2 class="fw-bold text-center mb-4">Preguntas Frecuentes</h2>
+    <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq1">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                    ¿Puedo cambiar la fecha de mi vuelo?
+                </button>
+            </h2>
+            <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Sí, puedes cambiar la fecha con al menos 24 horas de anticipación pagando una diferencia tarifaria si aplica.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq2">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                    ¿Qué objetos están prohibidos en el equipaje de mano?
+                </button>
+            </h2>
+            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Sustancias inflamables, objetos punzantes, líquidos mayores a 100ml y baterías de litio sueltas están prohibidos.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="faq3">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                    ¿Ofrecen servicio para menores que viajan solos?
+                </button>
+            </h2>
+            <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Sí, nuestro programa UMNR garantiza acompañamiento desde el abordaje hasta la entrega al adulto responsable en destino.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonios -->
+<section class="container py-5 bg-light">
+    <h2 class="fw-bold text-center mb-5">Lo que dicen nuestros pasajeros</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 p-4 shadow-sm">
+                <p>“Excelente servicio y puntualidad. Me encantó la atención del personal a bordo. Volveré a volar con Velaris sin dudarlo.”</p>
+                <h6 class="mt-3 fw-bold mb-0">Camila R.</h6>
+                <small class="text-muted">Cliente frecuente</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 shadow-sm">
+                <p>“Vuelos cómodos, buena comida y entretenimiento. Viajar a Madrid fue una gran experiencia. ¡Gracias Velaris!”</p>
+                <h6 class="mt-3 fw-bold mb-0">Juan M.</h6>
+                <small class="text-muted">Viajero internacional</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 shadow-sm">
+                <p>“La facilidad de reserva y la atención personalizada hacen de Velaris mi aerolínea de confianza.”</p>
+                <h6 class="mt-3 fw-bold mb-0">Valentina G.</h6>
+                <small class="text-muted">Emprendedora</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter + Contacto -->
+<section class="container py-5 text-center">
+    <h2 class="fw-bold mb-4">¿Quieres recibir ofertas exclusivas?</h2>
+    <p class="text-muted mb-4">Suscríbete a nuestro boletín mensual y entérate primero de nuestras promociones y noticias.</p>
+    <form class="row justify-content-center g-2">
+        <div class="col-md-6">
+            <input type="email" class="form-control" placeholder="Tu correo electrónico" required>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-velaris w-100">Suscribirme</button>
+        </div>
+    </form>
+</section>
+
+
 
 <!-- Iconos de Font Awesome -->
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>

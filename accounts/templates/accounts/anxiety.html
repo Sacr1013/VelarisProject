@@ -1,40 +1,164 @@
 {% extends 'accounts/user_base.html' %}
 {% load static %}
-{% load humanize %}
-{% block title %}Manejo de Ansiedad - Velaris{% endblock %}
+{% block title %}Control de Ansiedad - Velaris{% endblock %}
 
 {% block content %}
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0">
-        <h4 class="mb-0">Consejos para Manejar la Ansiedad al Volar</h4>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            {% for tip in tips %}
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
-                                <i class="{{ tip.icon }} text-primary" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <h5 class="mb-0">{{ tip.title }}</h5>
+<div class="content-wrapper">
+    <div class="ansiedad-grid">
+        <!-- Anxiety Level Card -->
+        <div class="card anxiety-level">
+            <div class="card-header">
+                <i class="fas fa-brain"></i>
+                <h5>Nivel de ansiedad</h5>
+            </div>
+            <div class="card-body">
+                <div class="anxiety-control">
+                    <div class="range-container">
+                        <input type="range" id="anxietyRange" min="1" max="10" value="5" />
+                        <div class="range-labels">
+                            <span>Relajado</span>
+                            <span>Neutral</span>
+                            <span>Ansioso</span>
                         </div>
-                        <p class="text-muted">{{ tip.content }}</p>
+                    </div>
+                    <p id="anxietyMessage" class="anxiety-status">Estado: Neutral</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sound Library Card -->
+        <div class="card sound-library">
+            <div class="card-header">
+                <i class="fas fa-music"></i>
+                <h5>Sonidos relajantes</h5>
+            </div>
+            <div class="card-body">
+                <div id="soundList">
+                    <div class="sound-item">
+                        <i class="fas fa-water"></i>
+                        <p>Olas del océano</p>
+                        <div class="sound-controls">
+                            <input type="range" min="0" max="1" step="0.1" value="0.5">
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                        </div>
+                    </div>
+                    <div class="sound-item">
+                        <i class="fas fa-cloud-rain"></i>
+                        <p>Lluvia suave</p>
+                        <div class="sound-controls">
+                            <input type="range" min="0" max="1" step="0.1" value="0.5">
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                        </div>
+                    </div>
+                    <div class="sound-item">
+                        <i class="fas fa-tree"></i>
+                        <p>Bosque</p>
+                        <div class="sound-controls">
+                            <input type="range" min="0" max="1" step="0.1" value="0.5">
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                        </div>
+                    </div>
+                    <div class="sound-item">
+                        <i class="fas fa-wind"></i>
+                        <p>Ruido blanco</p>
+                        <div class="sound-controls">
+                            <input type="range" min="0" max="1" step="0.1" value="0.5">
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                        </div>
+                    </div>
+                    <div class="sound-item">
+                        <i class="fas fa-spa"></i>
+                        <p>Música meditativa</p>
+                        <div class="sound-controls">
+                            <input type="range" min="0" max="1" step="0.1" value="0.5">
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
         
-        <div class="mt-4 p-3 bg-light rounded">
-            <h5>Recursos adicionales:</h5>
-            <ul>
-                <li><a href="#" target="_blank">Guía completa para superar el miedo a volar</a></li>
-                <li><a href="#" target="_blank">Ejercicios de relajación para hacer en el avión</a></li>
-                <li><a href="#" target="_blank">Foro de apoyo para personas con aerofobia</a></li>
-            </ul>
+        <!-- Music Options Card -->
+        <div class="card music-options">
+            <div class="card-header">
+                <i class="fas fa-headphones"></i>
+                <h5>Escucha tu música favorita</h5>
+            </div>
+            <div class="card-body">
+                <div class="music-buttons">
+                    <button class="music-btn spotify" onclick="window.open('https://open.spotify.com/', '_blank')">
+                        <i class="fab fa-spotify"></i>
+                        <span>Spotify</span>
+                    </button>
+                    <button class="music-btn youtube" onclick="window.open('https://www.youtube.com/', '_blank')">
+                        <i class="fab fa-youtube"></i>
+                        <span>YouTube</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Breathing Exercise Card -->
+        <div class="card breath-control">
+            <div class="card-header">
+                <i class="fas fa-wind"></i>
+                <h5>Ejercicio 4-7-8</h5>
+            </div>
+            <div class="card-body">
+                <div class="breath-display-container">
+                    <div class="breath-circle">
+                        <div class="breath-progress" id="breathProgressCircle"></div>
+                        <div id="breathPhase" class="breath-display">Inhala</div>
+                    </div>
+                </div>
+                <div class="breath-count" id="breathCount">0</div>
+                <div class="breath-controls">
+                    <button class="control-btn start-btn" onclick="startBreathing()">
+                        <i class="fas fa-play"></i> Iniciar
+                    </button>
+                    <button class="control-btn pause-btn" onclick="pauseBreathing()">
+                        <i class="fas fa-pause"></i> Pausar
+                    </button>
+                    <button class="control-btn stop-btn" onclick="stopBreathing()">
+                        <i class="fas fa-stop"></i> Terminar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Facts Card -->
+        <div class="card facts">
+            <div class="card-header">
+                <i class="fas fa-lightbulb"></i>
+                <h5>¿Sabías que...?</h5>
+            </div>
+            <div class="card-body">
+                <div class="facts-list" id="factList">
+                    <div class="fact-card">
+                        Los aviones comerciales son 200 veces más seguros que los automóviles
+                    </div>
+                    <div class="fact-card">
+                        La turbulencia es incómoda pero no peligrosa para el avión
+                    </div>
+                    <div class="fact-card">
+                        Los pilotos entrenan constantemente para manejar cualquier situación
+                    </div>
+                    <div class="fact-card">
+                        Los aviones pueden volar perfectamente con un solo motor
+                    </div>
+                    <div class="fact-card">
+                        El aire en cabina se renueva completamente cada 2-3 minutos
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <!-- Help Button -->
+    <div class="help-btn" id="helpBtn">
+        <i class="fas fa-hands-helping"></i>
+    </div>
 </div>
+
+<script src="{% static 'js/anxiety.js' %}"></script>
 {% endblock %}

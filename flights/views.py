@@ -965,3 +965,14 @@ def admin_payment_detail(request, payment_id):
     return render(request, 'flights/admin/payment_detail.html', {
         'payment': payment
     })
+
+@login_required
+def cancel_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, user=request.user)
+    if request.method == 'POST':
+        if booking.status in ['PENDING', 'CONFIRMED']:
+            booking.cancel(notify_user=True)
+            messages.success(request, 'La reserva fue cancelada correctamente.')
+        else:
+            messages.warning(request, 'Esta reserva ya está cancelada.')
+    return redirect('user_bookings')

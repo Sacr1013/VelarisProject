@@ -35,13 +35,31 @@
                             </span>
                         </td>
                         <td class="text-end">
-                            {% if booking.status == 'CONFIRMED' %}
+                            {% if booking.status == 'PENDING' %}
+                                <a href="{% url 'payment_confirmation' booking.id %}" 
+                                class="btn btn-sm btn-outline-success">
+                                    Pagar
+                                </a>
+                                <form action="{% url 'cancel_booking' booking.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Cancelar
+                                    </button>
+                                </form>
+                            {% elif booking.status == 'CONFIRMED' %}
                                 <a href="{% url 'booking_detail_dashboard' booking.id %}" 
-                                   class="btn btn-sm btn-outline-primary">
+                                class="btn btn-sm btn-outline-primary">
                                     Ver/Descargar
                                 </a>
+                                <form action="{% url 'cancel_booking' booking.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Cancelar
+                                    </button>
+                                </form>
                             {% endif %}
                         </td>
+
                     </tr>
                     {% empty %}
                     <tr>

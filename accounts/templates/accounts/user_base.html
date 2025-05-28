@@ -5,107 +5,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Panel de Usuario - Velaris{% endblock %}</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/user_panel.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row min-vh-100">
-            <!-- Sidebar -->
-            <div class="col-md-3 bg-light border-end">
-                <div class="sidebar-sticky pt-4">
-                    <div class="text-center mb-4">
-                        <a class="navbar-brand d-block mb-3" href="{% url 'home' %}">Velaris</a>
-                        <div class="mb-2">
-                            <strong>{{ user.username }}</strong><br>
-                            <small class="text-muted">{{ user.email }}</small>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                            <i class="fas fa-user text-primary" style="font-size: 2.5rem;"></i>
-                        </div>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-sticky">
+            <div class="sidebar-header">
+                <a class="navbar-brand d-block" href="{% url 'home' %}">Velaris</a>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {% if user.profile_photo %}
+                            <img src="{{ user.profile_photo.url }}" alt="Foto de perfil">
+                        {% else %}
+                            <i class="fas fa-user"></i>
+                        {% endif %}
                     </div>
-                    
-                    <nav class="nav flex-column">
-                        <a class="nav-link d-flex align-items-center py-2 {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
-                            <i class="fas fa-home me-2"></i> Inicio
-                        </a>
-                        <a class="nav-link d-flex align-items-center py-2 {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
-                            <i class="fas fa-user-circle me-2"></i> Perfil
-                        </a>
-                        <a class="nav-link d-flex align-items-center py-2 {% if request.resolver_match.url_name == 'user_bookings' %}active{% endif %}" href="{% url 'user_bookings' %}">
-                            <i class="fas fa-ticket-alt me-2"></i> Mis Reservas
-                        </a>
-                        <a class="nav-link d-flex align-items-center py-2 {% if request.resolver_match.url_name == 'jetlag' %}active{% endif %}" href="{% url 'jetlag' %}">
-                            <i class="fas fa-clock me-2"></i> JetLag
-                        </a>
-                        <a class="nav-link d-flex align-items-center py-2 {% if request.resolver_match.url_name == 'anxiety' %}active{% endif %}" href="{% url 'anxiety' %}">
-                            <i class="fas fa-heartbeat me-2"></i> Ansiedad
-                        </a>
-                        <a class="nav-link d-flex align-items-center py-2" href="{% url 'home' %}">
-                            <i class="fas fa-plane me-2"></i> Buscar Vuelos
-                        </a>
-                        <a class="nav-link d-flex align-items-center py-2" href="{% url 'logout' %}">
-                            <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
-                        </a>
-                    </nav>
+                    <div class="user-details">
+                        <strong>{{ user.username }}</strong>
+                        <small>{{ user.email }}</small>
+                    </div>
                 </div>
             </div>
+            
+            <nav class="nav flex-column">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Perfil</span>
+                </a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'user_bookings' %}active{% endif %}" href="{% url 'user_bookings' %}">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Mis Reservas</span>
+                </a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'jetlag' %}active{% endif %}" href="{% url 'jetlag' %}">
+                    <i class="fas fa-clock"></i>
+                    <span>JetLag</span>
+                </a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'anxiety' %}active{% endif %}" href="{% url 'anxiety' %}">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Ansiedad</span>
+                </a>
+                <a class="nav-link" href="{% url 'home' %}">
+                    <i class="fas fa-plane"></i>
+                    <span>Buscar Vuelos</span>
+                </a>
+                {% if user.is_staff %}
+                <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                    <i class="fas fa-tools"></i>
+                    <span>Panel Admin</span>
+                </a>
+                {% endif %}
+                <a class="nav-link" href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    </div>
 
-            <!-- Contenido principal -->
-            <div class="col-md-9 p-4">
-                {% include 'includes/auth_messages.html' %}
-                {% block content %}{% endblock %}
+    <!-- Contenido principal -->
+    <div class="main-content" id="mainContent">
+        <header class="main-header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>{% block page_title %}Panel de Usuario{% endblock %}</h1>
+            </div>
+            <div class="header-right">
+                <div class="dark-mode-toggle">
+                    <input type="checkbox" id="darkModeToggle">
+                    <label for="darkModeToggle">
+                        <i class="fas fa-sun"></i>
+                        <i class="fas fa-moon"></i>
+                        <div class="toggle-ball"></div>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% include 'includes/auth_messages.html' %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast show bg-{{ message.tags }}">
+            <div class="toast-header">
+                <strong>{{ message.tags|title }}</strong>
+                <button type="button" class="btn-close" data-dismiss="toast">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="toast-body">
+                {{ message }}
             </div>
         </div>
-    </div>
-    
-    {% if messages %}
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-    {% for message in messages %}
-    <div class="toast show bg-{{ message.tags }} text-white" role="alert">
-        <div class="toast-header">
-        <strong class="me-auto">{{ message.tags|title }}</strong>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body">
-        {{ message }}
-        </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
     </div>
     {% endif %}
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-    const toastElList = document.querySelectorAll('.toast');
-    toastElList.forEach(el => new bootstrap.Toast(el, { delay: 5000, autohide: true }).show());
-    });
-    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'js/messages.js' %}"></script>
+    <script src="{% static 'js/user_panel.js' %}"></script>
     <script>
-    // Bloquear navegación con las flechas del navegador
-    history.pushState(null, null, location.href);
-    window.onpopstate = function(event) {
-        history.go(1);
-    };
+        // Bloquear navegación con las flechas del navegador
+        history.pushState(null, null, location.href);
+        window.onpopstate = function(event) {
+            history.go(1);
+        };
 
-    // Limpiar historial al cargar la página
-    if(window.history.replaceState) {
-        window.history.replaceState(null, null, window.location.href);
-    }
+        // Limpiar historial al cargar la página
+        if(window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+        
+        // Cerrar sidebar al hacer clic en un enlace (solo móviles)
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 992) {
+                    document.getElementById('sidebar').classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
     </script>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
